@@ -42,33 +42,76 @@ void AetherEditor::CrayonLookAndFeel::drawRotarySlider(
     float sliderPos, float rotaryStartAngle, float rotaryEndAngle, juce::Slider&)
 {
     auto bounds = juce::Rectangle<float>((float)x, (float)y, (float)w, (float)h);
-    auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f - 2.0f;
+    auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f - 3.0f;
     auto centre = bounds.getCentre();
     auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
-    // Drop shadow
-    g.setColour(Sky::KnobShadow);
-    g.fillEllipse(centre.x - radius + 2, centre.y - radius + 2, radius * 2.0f, radius * 2.0f);
+    // ---- Hyper-realistic hardware pedal knob ----
 
-    // White knob body (like real hardware pedal knob)
-    juce::ColourGradient knobGrad(Sky::White, centre.x - radius * 0.3f, centre.y - radius * 0.3f,
-                                   Sky::KnobSlot, centre.x + radius * 0.5f, centre.y + radius * 0.5f, true);
-    g.setGradientFill(knobGrad);
+    // 1. Drop shadow (soft, offset down-right)
+    for (int s = 4; s >= 1; --s)
+    {
+        float alpha = 0.08f * (float)s;
+        g.setColour(juce::Colour(0x00000000).withAlpha(alpha));
+        g.fillEllipse(centre.x - radius + (float)s * 0.8f,
+                      centre.y - radius + (float)s * 0.8f,
+                      radius * 2.0f, radius * 2.0f);
+    }
+
+    // 2. Outer rim (dark ring — the metal base the knob sits in)
+    g.setColour(juce::Colour(0xFF999999));
+    g.fillEllipse(centre.x - radius - 1, centre.y - radius - 1,
+                  radius * 2.0f + 2, radius * 2.0f + 2);
+
+    // 3. Main knob body — radial gradient from bright top-left to shadow bottom-right
+    juce::ColourGradient bodyGrad(juce::Colour(0xFFFCFCFC),
+                                   centre.x - radius * 0.4f, centre.y - radius * 0.4f,
+                                   juce::Colour(0xFFD5D5D5),
+                                   centre.x + radius * 0.5f, centre.y + radius * 0.5f, true);
+    bodyGrad.addColour(0.5, juce::Colour(0xFFEEEEEE));
+    g.setGradientFill(bodyGrad);
     g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f);
 
-    // Subtle rim
-    g.setColour(juce::Colour(0x20000000));
-    g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f, 1.5f);
+    // 4. Highlight crescent (top-left specular reflection)
+    juce::ColourGradient highlightGrad(juce::Colour(0x55FFFFFF),
+                                        centre.x - radius * 0.5f, centre.y - radius * 0.5f,
+                                        juce::Colour(0x00FFFFFF),
+                                        centre.x, centre.y, true);
+    g.setGradientFill(highlightGrad);
+    g.fillEllipse(centre.x - radius * 0.85f, centre.y - radius * 0.85f,
+                  radius * 1.2f, radius * 1.0f);
 
-    // Indicator notch/slot (like real knob)
-    float notchLen = radius * 0.35f;
-    float notchStartR = radius * 0.15f;
-    float nx1 = centre.x + std::sin(angle) * notchStartR;
-    float ny1 = centre.y - std::cos(angle) * notchStartR;
-    float nx2 = centre.x + std::sin(angle) * (notchStartR + notchLen);
-    float ny2 = centre.y - std::cos(angle) * (notchStartR + notchLen);
-    g.setColour(juce::Colour(0xFF888888));
-    g.drawLine(nx1, ny1, nx2, ny2, 2.5f);
+    // 5. Subtle edge ring (beveled look)
+    g.setColour(juce::Colour(0x18000000));
+    g.drawEllipse(centre.x - radius, centre.y - radius,
+                  radius * 2.0f, radius * 2.0f, 1.0f);
+    g.setColour(juce::Colour(0x0DFFFFFF));
+    g.drawEllipse(centre.x - radius + 1, centre.y - radius + 1,
+                  radius * 2.0f - 2, radius * 2.0f - 2, 0.5f);
+
+    // 6. Center cap (slightly recessed circle in the middle)
+    float capR = radius * 0.28f;
+    juce::ColourGradient capGrad(juce::Colour(0xFFE8E8E8),
+                                  centre.x - capR * 0.3f, centre.y - capR * 0.3f,
+                                  juce::Colour(0xFFCCCCCC),
+                                  centre.x + capR * 0.4f, centre.y + capR * 0.4f, true);
+    g.setGradientFill(capGrad);
+    g.fillEllipse(centre.x - capR, centre.y - capR, capR * 2, capR * 2);
+    g.setColour(juce::Colour(0x15000000));
+    g.drawEllipse(centre.x - capR, centre.y - capR, capR * 2, capR * 2, 0.8f);
+
+    // 7. Position indicator line (notch/slot like real knob)
+    float notchInnerR = radius * 0.35f;
+    float notchOuterR = radius * 0.82f;
+    float nx1 = centre.x + std::sin(angle) * notchInnerR;
+    float ny1 = centre.y - std::cos(angle) * notchInnerR;
+    float nx2 = centre.x + std::sin(angle) * notchOuterR;
+    float ny2 = centre.y - std::cos(angle) * notchOuterR;
+    g.setColour(juce::Colour(0xFF555555));
+    g.drawLine(nx1, ny1, nx2, ny2, 2.8f);
+    // Slight shadow on the notch for depth
+    g.setColour(juce::Colour(0x20000000));
+    g.drawLine(nx1 + 0.5f, ny1 + 0.5f, nx2 + 0.5f, ny2 + 0.5f, 1.5f);
 }
 
 void AetherEditor::CrayonLookAndFeel::drawToggleButton(

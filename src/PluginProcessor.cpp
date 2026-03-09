@@ -26,7 +26,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("swellDepth", 1), "Swell Depth",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.8f));
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 1.0f));
 
     // === VINYL (Year + Detune only) ===
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
