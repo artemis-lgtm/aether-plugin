@@ -282,6 +282,40 @@ void AetherEditor::paint(juce::Graphics& g)
     else
         g.fillAll(juce::Colour(0xFF5DADE2)); // fallback sky blue
 
+    // Section boxes (semi-transparent white panels on top of background)
+    int sectionW = (getWidth() - 50) / 4;
+    int sectionY = 100;
+    int sectionH = 240;
+    int sx0 = 15;
+
+    struct SectionInfo { int x; juce::Colour border; const char* title; };
+    SectionInfo sections[] = {
+        { sx0,                        juce::Colour(0xFFFF69B4), "SWELL" },
+        { sx0 + sectionW + 5,        juce::Colour(0xFFFF8C42), "VINYL" },
+        { sx0 + (sectionW + 5) * 2,  juce::Colour(0xFF9B59B6), "PSYCHE" },
+        { sx0 + (sectionW + 5) * 3,  juce::Colour(0xFF2ECC71), "LFO" }
+    };
+
+    for (auto& sec : sections)
+    {
+        // Semi-transparent white fill
+        g.setColour(juce::Colour(0x70FFFFFF));
+        g.fillRoundedRectangle((float)sec.x, (float)sectionY, (float)sectionW, (float)sectionH, 10.0f);
+
+        // Colored border (crayon-thick)
+        g.setColour(sec.border);
+        g.drawRoundedRectangle((float)sec.x, (float)sectionY, (float)sectionW, (float)sectionH, 10.0f, 3.0f);
+
+        // Section title
+        g.setFont(juce::Font(15.0f).boldened());
+        g.drawText(sec.title, sec.x + 38, sectionY + 5, sectionW - 44, 22, juce::Justification::left);
+    }
+
+    // Master section label
+    g.setColour(juce::Colour(0xB0000000));
+    g.setFont(juce::Font(15.0f).boldened());
+    g.drawText("M A S T E R", 0, sectionY + sectionH + 14, getWidth(), 22, juce::Justification::centred);
+
     // Animated swimming characters (on top of background, behind controls)
     drawSwimmingCharacters(g);
 
@@ -289,9 +323,6 @@ void AetherEditor::paint(juce::Graphics& g)
     drawTitle(g);
 
     // LFO info display
-    int sectionW = (getWidth() - 50) / 4;
-    int sectionY = 100;
-    int sectionH = 240;
     int lfoX = 15 + (sectionW + 5) * 3;
     int lShape = static_cast<int>(lfoShape.getValue());
     int lSyncR = static_cast<int>(lfoSyncRate.getValue());
