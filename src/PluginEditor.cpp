@@ -264,3 +264,42 @@ void AetherEditor::drawTitle(juce::Graphics& g)
         startX += cw;
     }
 }
+
+// ================================================================
+// Section label (header with pill background)
+// ================================================================
+void AetherEditor::drawSectionLabel(juce::Graphics& g, const juce::String& text,
+                                     int x, int y, int width)
+{
+    auto font = juce::Font(13.0f).boldened();
+    g.setFont(font);
+
+    juce::Rectangle<float> pill((float)x, (float)y, (float)width, 18.0f);
+    g.setColour(juce::Colour(0x90000000));
+    g.fillRoundedRectangle(pill, 5.0f);
+    g.setColour(juce::Colour(0x40FFFFFF));
+    g.drawRoundedRectangle(pill, 5.0f, 0.5f);
+
+    g.setColour(juce::Colours::white);
+    g.drawText(text, pill.toNearestInt(), juce::Justification::centred);
+}
+
+// ================================================================
+// Knob label (small text below knob with subtle background)
+// ================================================================
+void AetherEditor::drawKnobLabel(juce::Graphics& g, const juce::String& text,
+                                  int knobX, int y)
+{
+    auto font = juce::Font(10.0f).boldened();
+    g.setFont(font);
+
+    float textW = font.getStringWidthFloat(text) + 8.0f;
+    float cx = (float)knobX + 31.0f; // center of 62px knob
+    juce::Rectangle<float> pill(cx - textW / 2.0f, (float)y, textW, 14.0f);
+
+    g.setColour(juce::Colour(0x70000000));
+    g.fillRoundedRectangle(pill, 3.0f);
+
+    g.setColour(juce::Colours::white);
+    g.drawText(text, pill.toNearestInt(), juce::Justification::centred);
+}

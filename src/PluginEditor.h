@@ -40,6 +40,8 @@ private:
     // Title animation
     float animTime = 0.0f;
     void drawTitle(juce::Graphics&);
+    void drawSectionLabel(juce::Graphics&, const juce::String& text, int x, int y, int width);
+    void drawKnobLabel(juce::Graphics&, const juce::String& text, int knobX, int y);
 
     // ---- Controls ----
     juce::Slider swellSens, swellAttack, swellDepth;
