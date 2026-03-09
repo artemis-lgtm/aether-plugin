@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Aether - Plugin Artwork</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  
+  .artwork-container {
+    width: 800px;
+    height: 800px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 30% 20%, #1a0b2e 0%, #0a0612 50%, #050208 100%);
+  }
+  
+  /* Animated nebula layers */
+  .nebula {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: drift 8s ease-in-out infinite;
+  }
+  
+  .nebula-1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(139,92,246,0.25) 0%, transparent 70%);
+    top: 5%; left: 10%;
+    animation-delay: 0s;
+  }
+  
+  .nebula-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%);
+    top: 40%; right: 5%;
+    animation-delay: -3s;
+    animation-duration: 10s;
+  }
+  
+  .nebula-3 {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%);
+    bottom: 5%; left: 20%;
+    animation-delay: -5s;
+    animation-duration: 12s;
+  }
+
+  .nebula-4 {
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%);
+    top: 60%; left: 50%;
+    animation-delay: -2s;
+    animation-duration: 9s;
+  }
+  
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, -15px) scale(1.05); }
+    50% { transform: translate(-10px, 20px) scale(0.95); }
+    75% { transform: translate(15px, 10px) scale(1.02); }
+  }
+  
+  /* Sacred geometry overlay */
+  .geometry {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px; height: 500px;
+  }
+  
+  .geometry svg {
+    width: 100%; height: 100%;
+    opacity: 0.15;
+    animation: rotate-slow 30s linear infinite;
+  }
+  
+  @keyframes rotate-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .geometry-inner svg {
+    animation: rotate-slow 20s linear infinite reverse;
+    opacity: 0.1;
+  }
+  
+  /* Stars */
+  .stars {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+  }
+  
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.8; }
+  }
+  
+  /* Title */
+  .title-group {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+  }
+  
+  .title {
+    font-size: 96px;
+    font-weight: 100;
+    letter-spacing: 28px;
+    color: #e2d9f3;
+    text-shadow: 
+      0 0 40px rgba(139,92,246,0.5),
+      0 0 80px rgba(139,92,246,0.3),
+      0 0 120px rgba(6,182,212,0.2);
+    margin-bottom: 16px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 12px;
+    color: rgba(139,127,170,0.7);
+    text-transform: uppercase;
+  }
+  
+  .divider {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), rgba(6,182,212,0.5), transparent);
+    margin: 20px auto;
+  }
+  
+  .sections {
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    color: rgba(226,217,243,0.35);
+    text-transform: uppercase;
+  }
+  
+  /* Waveform decoration */
+  .waveform {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    opacity: 0.25;
+  }
+  
+  .wave-bar {
+    width: 2px;
+    background: linear-gradient(180deg, #8b5cf6, #06b6d4);
+    border-radius: 1px;
+    animation: wave 2s ease-in-out infinite;
+  }
+  
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.3); }
+  }
+
+  /* Corner accents */
+  .corner {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-color: rgba(139,92,246,0.2);
+    border-style: solid;
+    border-width: 0;
+  }
+  .corner-tl { top: 30px; left: 30px; border-top-width: 1px; border-left-width: 1px; }
+  .corner-tr { top: 30px; right: 30px; border-top-width: 1px; border-right-width: 1px; }
+  .corner-bl { bottom: 30px; left: 30px; border-bottom-width: 1px; border-left-width: 1px; }
+  .corner-br { bottom: 30px; right: 30px; border-bottom-width: 1px; border-right-width: 1px; }
+</style>
+</head>
+<body>
+
+<div class="artwork-container" id="artwork">
+  <!-- Nebula layers -->
+  <div class="nebula nebula-1"></div>
+  <div class="nebula nebula-2"></div>
+  <div class="nebula nebula-3"></div>
+  <div class="nebula nebula-4"></div>
+  
+  <!-- Stars -->
+  <div class="stars" id="stars"></div>
+  
+  <!-- Sacred geometry -->
+  <div class="geometry">
+    <svg viewBox="0 0 500 500">
+      <circle cx="250" cy="250" r="200" fill="none" stroke="#8b5cf6" stroke-width="0.5"/>
+      <circle cx="250" cy="250" r="160" fill="none" stroke="#06b6d4" stroke-width="0.5"/>
+      <circle cx="250" cy="250" r="120" fill="none" stroke="#8b5cf6" stroke-width="0.3"/>
+      <!-- Hexagram -->
+      <polygon points="250,50 450,366 50,366" fill="none" stroke="#8b5cf6" stroke-width="0.5"/>
+      <polygon points="250,450 50,134 450,134" fill="none" stroke="#06b6d4" stroke-width="0.5"/>
+      <!-- Inner lines -->
+      <line x1="250" y1="50" x2="250" y2="450" stroke="#8b5cf6" stroke-width="0.3"/>
+      <line x1="50" y1="250" x2="450" y2="250" stroke="#06b6d4" stroke-width="0.3"/>
+      <line x1="77" y1="150" x2="423" y2="350" stroke="#8b5cf6" stroke-width="0.2"/>
+      <line x1="77" y1="350" x2="423" y2="150" stroke="#06b6d4" stroke-width="0.2"/>
+    </svg>
+  </div>
+  
+  <div class="geometry geometry-inner" style="width:350px;height:350px;">
+    <svg viewBox="0 0 500 500">
+      <circle cx="250" cy="250" r="230" fill="none" stroke="#ec4899" stroke-width="0.3"/>
+      <polygon points="250,30 470,250 250,470 30,250" fill="none" stroke="#ec4899" stroke-width="0.4"/>
+    </svg>
+  </div>
+  
+  <!-- Title -->
+  <div class="title-group">
+    <div class="title">AETHER</div>
+    <div class="divider"></div>
+    <div class="subtitle">Psychedelic Guitar Processor</div>
+    <div style="height:24px"></div>
+    <div class="sections">Swell &middot; Vinyl &middot; Psyche</div>
+  </div>
+  
+  <!-- Waveform decoration -->
+  <div class="waveform" id="waveform"></div>
+  
+  <!-- Corner accents -->
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+</div>
+
+<script>
+  // Generate stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2 + 1;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 3 + 's';
+    star.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    starsEl.appendChild(star);
+  }
+  
+  // Generate waveform bars
+  const waveEl = document.getElementById('waveform');
+  for (let i = 0; i < 60; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    const height = Math.sin(i * 0.2) * 20 + Math.random() * 15 + 5;
+    bar.style.height = height + 'px';
+    bar.style.animationDelay = (i * 0.05) + 's';
+    waveEl.appendChild(bar);
+  }
+</script>
+
+</body>
+</html>
