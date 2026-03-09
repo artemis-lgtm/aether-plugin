@@ -18,50 +18,46 @@ public:
 private:
     AetherProcessor& processor;
 
-    // ---- Custom Look & Feel ----
-    class CrayonLookAndFeel : public juce::LookAndFeel_V4
+    // ---- Image-based knob Look & Feel ----
+    class FilmstripLookAndFeel : public juce::LookAndFeel_V4
     {
     public:
-        CrayonLookAndFeel();
+        FilmstripLookAndFeel();
+        void setKnobStrip(juce::Image strip, int numFrames);
         void drawRotarySlider(juce::Graphics&, int x, int y, int w, int h,
                               float sliderPos, float rotaryStartAngle,
                               float rotaryEndAngle, juce::Slider&) override;
         void drawToggleButton(juce::Graphics&, juce::ToggleButton&,
                               bool highlighted, bool down) override;
+    private:
+        juce::Image knobStrip;
+        int frames = 128;
+        int frameW = 64;
     };
-    CrayonLookAndFeel crayonLnf;
+    FilmstripLookAndFeel filmstripLnf;
 
-    // ---- Drawing helpers ----
-    void drawSkyBackground(juce::Graphics&);
-    void drawCloud(juce::Graphics&, float x, float y, float w);
-    void drawSun(juce::Graphics&, float x, float y, float r);
+    // Background image
+    juce::Image backgroundImg;
+
+    // Title animation
+    float animTime = 0.0f;
     void drawTitle(juce::Graphics&);
-    void drawSectionLabel(juce::Graphics&, int x, int y, int w, const juce::String& title, juce::Colour col);
-    void drawDoodles(juce::Graphics&);
     void drawSwimmingCharacters(juce::Graphics&);
 
-    // Doodle characters (drawn procedurally like kid's crayon drawings)
-    void drawBoombox(juce::Graphics&, float x, float y, float size, float phase);
-    void drawCassette(juce::Graphics&, float x, float y, float size, float phase);
-    void drawMushroom(juce::Graphics&, float x, float y, float size, float phase, juce::Colour cap);
-    void drawAlien(juce::Graphics&, float x, float y, float size, float phase, juce::Colour body);
-    void drawFlower(juce::Graphics&, float x, float y, float size, float phase, juce::Colour petals);
-    void drawGhost(juce::Graphics&, float x, float y, float size, float phase);
-    void drawStar4(juce::Graphics&, float cx, float cy, float size);
-
-    // ---- Animation ----
-    float animTime = 0.0f;
+    // Animated characters
     struct Swimmer {
-        int type;       // 0=mushroom 1=alien 2=flower 3=ghost 4=boombox 5=cassette
-        float y;
-        float speed;
-        float size;
-        float phaseOffset;
+        int type;
+        float y, speed, size, phaseOffset;
         juce::Colour colour;
         bool goingRight;
     };
     std::vector<Swimmer> swimmers;
     void initSwimmers();
+
+    // Character drawing
+    void drawMushroom(juce::Graphics&, float x, float y, float size, float phase, juce::Colour cap);
+    void drawGhost(juce::Graphics&, float x, float y, float size, float phase);
+    void drawAlien(juce::Graphics&, float x, float y, float size, float phase, juce::Colour body);
 
     // ---- Controls ----
     juce::Slider swellSens, swellAttack, swellDepth;
@@ -72,14 +68,11 @@ private:
     juce::ToggleButton swellBypass{"S"}, vinylBypass{"V"}, psycheBypass{"P"}, lfoBypass{"L"};
     juce::ToggleButton lfoSync{"SYNC"};
 
-    // Labels
     std::vector<std::unique_ptr<juce::Label>> labels;
     juce::Label& addLabel(juce::Slider& s, const juce::String& text);
 
-    // Attachments
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
-
     std::unique_ptr<SliderAttachment> aSwellSens, aSwellAttack, aSwellDepth;
     std::unique_ptr<SliderAttachment> aVinylYear, aVinylDetune;
     std::unique_ptr<SliderAttachment> aPsycheShimmer, aPsycheSpace, aPsycheMod, aPsycheWarp, aPsycheMix, aPsycheNotches, aPsycheSweep;
