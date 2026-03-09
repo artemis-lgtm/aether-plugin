@@ -34,6 +34,7 @@ target_sources(Aether
         src/dsp/TransientShaper.h
         src/dsp/VinylProcessor.h
         src/dsp/PsychedelicProcessor.h
+        src/dsp/LFOProcessor.h
 )
 
 # JUCE modules

@@ -60,11 +60,10 @@ public:
         sweepLfoPhase = 0.0;
         shimmerAccum = 0.0f;
         
-        // Clear notch filter states
+        // Clear notch filter states (2 states per biquad, Direct Form II Transposed)
         for (int i = 0; i < MAX_NOTCHES; ++i)
         {
             notchState[i][0] = notchState[i][1] = 0.0;
-            notchState[i][2] = notchState[i][3] = 0.0;
         }
         
         // Reverb tap delay times (prime-number-based for density)

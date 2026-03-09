@@ -85,7 +85,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     // === LFO (Volume Shaper) ===
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("lfoShape", 1), "LFO Shape",
-        juce::NormalisableRange<float>(0.0f, 7.0f, 1.0f), 0.0f));
+        juce::NormalisableRange<float>(0.0f, 9.0f, 1.0f), 0.0f));   // 10 shapes
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("lfoRate", 1), "LFO Rate",
@@ -93,6 +93,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("lfoDepth", 1), "LFO Depth",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.0f));
+
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("lfoSyncRate", 1), "LFO Sync Rate",
+        juce::NormalisableRange<float>(0.0f, 18.0f, 1.0f), 7.0f));  // Default: 1/4
+
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("lfoPhaseOffset", 1), "LFO Phase",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.0f));
 
     // === MASTER ===
@@ -116,6 +124,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     
     params.push_back(std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID("lfoBypass", 1), "LFO Bypass", false));
+
+    // === LFO Sync Toggle ===
+    params.push_back(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID("lfoSync", 1), "LFO Sync", false));
 
     return { params.begin(), params.end() };
 }
@@ -143,59 +155,81 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, numSamples);
 
-    // Read parameters
-    float swellSens = *apvts.getRawParameterValue("swellSens");
+    // ---- Read parameters ----
+    float swellSens   = *apvts.getRawParameterValue("swellSens");
     float swellAttack = *apvts.getRawParameterValue("swellAttack");
-    float swellDepth = *apvts.getRawParameterValue("swellDepth");
-    bool swellBypass = *apvts.getRawParameterValue("swellBypass") > 0.5f;
+    float swellDepth  = *apvts.getRawParameterValue("swellDepth");
+    bool  swellBypass = *apvts.getRawParameterValue("swellBypass") > 0.5f;
     
-    float vYear = *apvts.getRawParameterValue("vinylYear");
-    float vWarp = *apvts.getRawParameterValue("vinylWarp");
-    float vDust = *apvts.getRawParameterValue("vinylDust");
-    float vWear = *apvts.getRawParameterValue("vinylWear");
+    float vYear   = *apvts.getRawParameterValue("vinylYear");
+    float vWarp   = *apvts.getRawParameterValue("vinylWarp");
+    float vDust   = *apvts.getRawParameterValue("vinylDust");
+    float vWear   = *apvts.getRawParameterValue("vinylWear");
     float vDetune = *apvts.getRawParameterValue("vinylDetune");
-    float vNoise = *apvts.getRawParameterValue("vinylNoise");
-    bool vinylBypass = *apvts.getRawParameterValue("vinylBypass") > 0.5f;
+    float vNoise  = *apvts.getRawParameterValue("vinylNoise");
+    bool  vinylBypass = *apvts.getRawParameterValue("vinylBypass") > 0.5f;
     
     float pShimmer = *apvts.getRawParameterValue("psycheShimmer");
-    float pSpace = *apvts.getRawParameterValue("psycheSpace");
-    float pMod = *apvts.getRawParameterValue("psycheMod");
-    float pWarp = *apvts.getRawParameterValue("psycheWarp");
-    float pMix = *apvts.getRawParameterValue("psycheMix");
+    float pSpace   = *apvts.getRawParameterValue("psycheSpace");
+    float pMod     = *apvts.getRawParameterValue("psycheMod");
+    float pWarp    = *apvts.getRawParameterValue("psycheWarp");
+    float pMix     = *apvts.getRawParameterValue("psycheMix");
     float pNotches = *apvts.getRawParameterValue("psycheNotches");
-    float pSweep = *apvts.getRawParameterValue("psycheSweep");
-    bool psycheBypass = *apvts.getRawParameterValue("psycheBypass") > 0.5f;
+    float pSweep   = *apvts.getRawParameterValue("psycheSweep");
+    bool  psycheBypass = *apvts.getRawParameterValue("psycheBypass") > 0.5f;
     
-    int lShape = static_cast<int>(*apvts.getRawParameterValue("lfoShape"));
-    float lRate = *apvts.getRawParameterValue("lfoRate");
-    float lDepth = *apvts.getRawParameterValue("lfoDepth");
-    bool lfoBypass = *apvts.getRawParameterValue("lfoBypass") > 0.5f;
+    int   lShape    = static_cast<int>(*apvts.getRawParameterValue("lfoShape"));
+    float lRate     = *apvts.getRawParameterValue("lfoRate");
+    float lDepth    = *apvts.getRawParameterValue("lfoDepth");
+    bool  lfoBypass = *apvts.getRawParameterValue("lfoBypass") > 0.5f;
+    bool  lSync     = *apvts.getRawParameterValue("lfoSync") > 0.5f;
+    int   lSyncRate = static_cast<int>(*apvts.getRawParameterValue("lfoSyncRate"));
+    float lPhaseOff = *apvts.getRawParameterValue("lfoPhaseOffset");
     
-    float masterMix = *apvts.getRawParameterValue("masterMix");
-    float masterGain = *apvts.getRawParameterValue("masterGain");
-    float gainLinear = juce::Decibels::decibelsToGain(masterGain);
+    float masterMixVal = *apvts.getRawParameterValue("masterMix");
+    float masterGain   = *apvts.getRawParameterValue("masterGain");
+    float gainLinear   = juce::Decibels::decibelsToGain(masterGain);
 
-    // Update DSP parameters
+    // ---- Update DSP parameters ----
     transientL.setParameters(swellSens, swellAttack, swellDepth);
     transientR.setParameters(swellSens, swellAttack, swellDepth);
     vinylL.setParameters(vYear, vWarp, vDust, vWear, vDetune, vNoise);
     vinylR.setParameters(vYear, vWarp, vDust, vWear, vDetune, vNoise);
     psychL.setParameters(pShimmer, pSpace, pMod, pWarp, pMix, pNotches, pSweep);
     psychR.setParameters(pShimmer, pSpace, pMod, pWarp, pMix, pNotches, pSweep);
-    lfo.setParameters(lShape, lRate, lDepth);
+    lfo.setParameters(lShape, lRate, lDepth, lSync, lSyncRate, lPhaseOff);
+
+    // ---- Read transport info from host (for LFO sync) ----
+    {
+        bool   isPlaying  = false;
+        double ppqPos     = 0.0;
+        double bpm        = 120.0;
+
+        if (auto* playHead = getPlayHead())
+        {
+            if (auto pos = playHead->getPosition())
+            {
+                if (auto b = pos->getBpm())           bpm       = *b;
+                if (auto ppq = pos->getPpqPosition()) ppqPos    = *ppq;
+                isPlaying = pos->getIsPlaying();
+            }
+        }
+
+        lfo.beginBlock(isPlaying, bpm, ppqPos);
+    }
 
     // Store dry signal for master mix
     juce::AudioBuffer<float> dryBuffer;
     dryBuffer.makeCopyOf(buffer);
 
-    // Process per-channel effects: Swell → Vinyl → Psyche
+    // ---- Process per-channel effects: Swell -> Vinyl -> Psyche ----
     for (int channel = 0; channel < juce::jmin(totalNumInputChannels, 2); ++channel)
     {
         float* channelData = buffer.getWritePointer(channel);
         
         auto& transient = (channel == 0) ? transientL : transientR;
-        auto& vinyl = (channel == 0) ? vinylL : vinylR;
-        auto& psych = (channel == 0) ? psychL : psychR;
+        auto& vinyl     = (channel == 0) ? vinylL     : vinylR;
+        auto& psych     = (channel == 0) ? psychL     : psychR;
 
         if (!swellBypass)
             transient.processBlock(channelData, numSamples);
@@ -207,7 +241,7 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
             psych.processBlock(channelData, numSamples);
     }
 
-    // LFO: apply same gain to both channels (shared phase)
+    // ---- LFO: apply same gain to both channels (shared phase) ----
     if (!lfoBypass && lDepth > 0.001f)
     {
         int channels = juce::jmin(totalNumInputChannels, 2);
@@ -219,16 +253,14 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         }
     }
 
-    // Master mix (dry/wet) and gain
+    // ---- Master mix (dry/wet) and gain ----
     for (int channel = 0; channel < juce::jmin(totalNumInputChannels, 2); ++channel)
     {
-        float* wet = buffer.getWritePointer(channel);
+        float* wet       = buffer.getWritePointer(channel);
         const float* dry = dryBuffer.getReadPointer(channel);
         
         for (int i = 0; i < numSamples; ++i)
-        {
-            wet[i] = (dry[i] * (1.0f - masterMix) + wet[i] * masterMix) * gainLinear;
-        }
+            wet[i] = (dry[i] * (1.0f - masterMixVal) + wet[i] * masterMixVal) * gainLinear;
     }
 }
 

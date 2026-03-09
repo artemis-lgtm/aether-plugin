@@ -64,11 +64,26 @@ void AetherEditor::AetherLookAndFeel::drawToggleButton(
 {
     auto bounds = button.getLocalBounds().toFloat().reduced(4);
     auto isOn = button.getToggleState();
-    g.setColour(isOn ? juce::Colour(0xFFEF4444) : juce::Colour(0xFF22C55E));
-    g.fillRoundedRectangle(bounds, 4.0f);
-    g.setColour(juce::Colours::white);
-    g.setFont(11.0f);
-    g.drawText(isOn ? "OFF" : "ON", bounds, juce::Justification::centred);
+
+    // Sync toggle gets a distinct look (cyan/gray) vs bypass (red/green)
+    bool isSyncButton = (button.getButtonText() == "SYNC");
+
+    if (isSyncButton)
+    {
+        g.setColour(isOn ? juce::Colour(0xFF06B6D4) : juce::Colour(0xFF2D2640));
+        g.fillRoundedRectangle(bounds, 4.0f);
+        g.setColour(juce::Colours::white);
+        g.setFont(10.0f);
+        g.drawText(isOn ? "SYNC" : "FREE", bounds, juce::Justification::centred);
+    }
+    else
+    {
+        g.setColour(isOn ? juce::Colour(0xFFEF4444) : juce::Colour(0xFF22C55E));
+        g.fillRoundedRectangle(bounds, 4.0f);
+        g.setColour(juce::Colours::white);
+        g.setFont(11.0f);
+        g.drawText(isOn ? "OFF" : "ON", bounds, juce::Justification::centred);
+    }
 }
 
 // === Editor ===
@@ -102,11 +117,14 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     setupKnob(psycheSweep, "psycheSweep", "SWEEP");
     setupBypass(psycheBypassBtn, "psycheBypass", "PSYCHE");
     
-    // LFO (3 knobs)
+    // LFO (5 knobs + sync toggle)
     setupKnob(lfoShape, "lfoShape", "SHAPE");
     setupKnob(lfoRate, "lfoRate", "RATE");
     setupKnob(lfoDepth, "lfoDepth", "DEPTH");
+    setupKnob(lfoSyncRate, "lfoSyncRate", "DIV");
+    setupKnob(lfoPhaseOffset, "lfoPhaseOffset", "PHASE");
     setupBypass(lfoBypassBtn, "lfoBypass", "LFO");
+    setupBypass(lfoSyncBtn, "lfoSync", "SYNC");
     
     // Master
     setupKnob(masterMix, "masterMix", "DRY/WET");
@@ -209,8 +227,40 @@ void AetherEditor::paint(juce::Graphics& g)
         g.setColour(juce::Colour(0xFFEC4899));
         g.setFont(juce::Font(14.0f).boldened());
         g.drawText(LFOProcessor::shapeName(shapeIdx),
-                   juce::Rectangle<float>(642, sectTop + 240, 310, 30),
+                   juce::Rectangle<float>(642, sectTop + 240, 310, 22),
                    juce::Justification::centred);
+    }
+
+    // LFO sync rate name (when sync is enabled)
+    if (auto* syncParam = processorRef.apvts.getRawParameterValue("lfoSync"))
+    {
+        bool syncOn = syncParam->load() > 0.5f;
+        if (syncOn)
+        {
+            if (auto* rateParam = processorRef.apvts.getRawParameterValue("lfoSyncRate"))
+            {
+                int rateIdx = static_cast<int>(rateParam->load());
+                g.setColour(juce::Colour(0xFF06B6D4));
+                g.setFont(juce::Font(13.0f).boldened());
+                g.drawText(LFOProcessor::syncRateName(rateIdx),
+                           juce::Rectangle<float>(642, sectTop + 262, 310, 20),
+                           juce::Justification::centred);
+            }
+        }
+        else
+        {
+            // Show Hz rate when in free mode
+            if (auto* hzParam = processorRef.apvts.getRawParameterValue("lfoRate"))
+            {
+                float hz = hzParam->load();
+                g.setColour(juce::Colour(0xFF8B7FAA));
+                g.setFont(juce::Font(11.0f));
+                juce::String rateStr = juce::String(hz, 1) + " Hz";
+                g.drawText(rateStr,
+                           juce::Rectangle<float>(642, sectTop + 262, 310, 20),
+                           juce::Justification::centred);
+            }
+        }
     }
 
     // Master strip
@@ -219,7 +269,7 @@ void AetherEditor::paint(juce::Graphics& g)
     // Credits
     g.setColour(juce::Colour(0xFF4A3F6B));
     g.setFont(juce::Font(8.0f));
-    g.drawText("v2.0 // artemis", 0, getHeight() - 14, getWidth(), 12, juce::Justification::centredRight);
+    g.drawText("v2.2 // artemis", 0, getHeight() - 14, getWidth(), 12, juce::Justification::centredRight);
 }
 
 void AetherEditor::resized()
@@ -238,9 +288,9 @@ void AetherEditor::resized()
         k.label.setBounds(x - 4, y + knob, knob + 8, lblH);
     };
 
-    auto placeBypass = [&](BypassAttachment& bp, int x, int y)
+    auto placeBypass = [&](BypassAttachment& bp, int x, int y, int w = 38)
     {
-        bp.button.setBounds(x, y, 38, 18);
+        bp.button.setBounds(x, y, w, 18);
     };
 
     // ---- SWELL (3 knobs vertical, x=8..126) ----
@@ -273,13 +323,22 @@ void AetherEditor::resized()
     placeKnob(psycheMix, px + pGap * 2, row2Y);
     placeBypass(psycheBypassBtn, px + pGap * 3 + knob - 30, row1Y - 20);
 
-    // ---- LFO (3 knobs + shape display, x=642..952) ----
+    // ---- LFO (5 knobs: 3 top + 2 bottom, x=642..952) ----
     int lx = 700;
     int lGap = knob + gap + 10;
+
+    // Row 1: Shape, Rate, Depth
     placeKnob(lfoShape, lx, row1Y);
     placeKnob(lfoRate, lx + lGap, row1Y);
     placeKnob(lfoDepth, lx + lGap * 2, row1Y);
-    placeBypass(lfoBypassBtn, lx + lGap * 2 + knob - 30, row1Y - 20);
+
+    // Row 2: Sync Division, Phase Offset
+    placeKnob(lfoSyncRate, lx, row2Y);
+    placeKnob(lfoPhaseOffset, lx + lGap, row2Y);
+
+    // Toggles: Sync (left), Bypass (right)
+    placeBypass(lfoSyncBtn, lx + lGap * 2 - 8, row1Y - 20, 48);
+    placeBypass(lfoBypassBtn, lx + lGap * 2 + 44, row1Y - 20);
 
     // ---- MASTER (horizontal, bottom strip) ----
     int my = 381;

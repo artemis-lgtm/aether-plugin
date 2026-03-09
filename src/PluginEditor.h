@@ -56,7 +56,9 @@ private:
     
     // LFO section
     KnobAttachment lfoShape, lfoRate, lfoDepth;
+    KnobAttachment lfoSyncRate, lfoPhaseOffset;
     BypassAttachment lfoBypassBtn;
+    BypassAttachment lfoSyncBtn;
     
     // Master
     KnobAttachment masterMix, masterGain;
