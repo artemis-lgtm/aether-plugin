@@ -2,7 +2,6 @@
 #include "PluginProcessor.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include <random>
 
 class AetherEditor : public juce::AudioProcessorEditor,
                      private juce::Timer
@@ -18,7 +17,7 @@ public:
 private:
     AetherProcessor& processor;
 
-    // ---- Image-based knob Look & Feel ----
+    // ---- Filmstrip knob Look & Feel ----
     class FilmstripLookAndFeel : public juce::LookAndFeel_V4
     {
     public:
@@ -32,32 +31,15 @@ private:
     private:
         juce::Image knobStrip;
         int frames = 128;
-        int frameW = 64;
+        int frameW = 128;
     };
     FilmstripLookAndFeel filmstripLnf;
 
-    // Background image
     juce::Image backgroundImg;
 
     // Title animation
     float animTime = 0.0f;
     void drawTitle(juce::Graphics&);
-    void drawSwimmingCharacters(juce::Graphics&);
-
-    // Animated characters
-    struct Swimmer {
-        int type;
-        float y, speed, size, phaseOffset;
-        juce::Colour colour;
-        bool goingRight;
-    };
-    std::vector<Swimmer> swimmers;
-    void initSwimmers();
-
-    // Character drawing
-    void drawMushroom(juce::Graphics&, float x, float y, float size, float phase, juce::Colour cap);
-    void drawGhost(juce::Graphics&, float x, float y, float size, float phase);
-    void drawAlien(juce::Graphics&, float x, float y, float size, float phase, juce::Colour body);
 
     // ---- Controls ----
     juce::Slider swellSens, swellAttack, swellDepth;
@@ -67,9 +49,6 @@ private:
     juce::Slider masterMix, masterGain;
     juce::ToggleButton swellBypass{"S"}, vinylBypass{"V"}, psycheBypass{"P"}, lfoBypass{"L"};
     juce::ToggleButton lfoSync{"SYNC"};
-
-    std::vector<std::unique_ptr<juce::Label>> labels;
-    juce::Label& addLabel(juce::Slider& s, const juce::String& text);
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
