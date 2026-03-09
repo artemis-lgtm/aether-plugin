@@ -3,92 +3,75 @@
 #include <cmath>
 
 // ================================================================
-// Colour palette — crayon on metal
+// Colour palette — bright sky / crayon childlike
 // ================================================================
-namespace Pedal
+namespace Sky
 {
-    const auto Metal       = juce::Colour(0xFF3A3A42);   // dark brushed metal
-    const auto MetalLight  = juce::Colour(0xFF555560);
-    const auto MetalEdge   = juce::Colour(0xFF222228);
-    const auto Cream       = juce::Colour(0xFFFFF8E7);
-    const auto Pink        = juce::Colour(0xFFFF69B4);
-    const auto HotPink     = juce::Colour(0xFFFF1493);
-    const auto Purple      = juce::Colour(0xFF9B59B6);
-    const auto Blue        = juce::Colour(0xFF3498DB);
-    const auto Green       = juce::Colour(0xFF2ECC71);
-    const auto Orange      = juce::Colour(0xFFFF8C42);
-    const auto Yellow      = juce::Colour(0xFFFFD700);
-    const auto Red         = juce::Colour(0xFFFF6B6B);
-    const auto Teal        = juce::Colour(0xFF00CEC9);
+    const auto Blue        = juce::Colour(0xFF5DADE2);   // sky blue
+    const auto BlueDark    = juce::Colour(0xFF3498DB);
+    const auto BlueLight   = juce::Colour(0xFF85C1E9);
     const auto White       = juce::Colour(0xFFFFFFFF);
-    const auto CrayonPink  = juce::Colour(0xFFFF85A2);
-    const auto CrayonBlue  = juce::Colour(0xFF85C1FF);
-    const auto CrayonGreen = juce::Colour(0xFF85FFB0);
-    const auto CrayonPurple= juce::Colour(0xFFCC85FF);
+    const auto CloudWhite  = juce::Colour(0xFFF0F4F8);
+    const auto SunYellow   = juce::Colour(0xFFFFD700);
+    const auto SunOrange   = juce::Colour(0xFFFFAA00);
+    const auto Black       = juce::Colour(0xFF222222);
+    const auto CrayonRed   = juce::Colour(0xFFFF6B6B);
+    const auto CrayonPink  = juce::Colour(0xFFFF69B4);
+    const auto CrayonOrange= juce::Colour(0xFFFF8C42);
     const auto CrayonYellow= juce::Colour(0xFFFFE066);
-    const auto Outline     = juce::Colour(0xFFFFFFDD);   // crayon white-ish on dark bg
-    const auto DarkText    = juce::Colour(0xFFFFFFFF);
-    const auto SectionPink = juce::Colour(0x30FF69B4);
-    const auto SectionBlue = juce::Colour(0x303498DB);
-    const auto SectionPurple = juce::Colour(0x309B59B6);
-    const auto SectionGreen  = juce::Colour(0x302ECC71);
+    const auto CrayonGreen = juce::Colour(0xFF6BCB77);
+    const auto CrayonPurple= juce::Colour(0xFFBB6BD9);
+    const auto CrayonTeal  = juce::Colour(0xFF00CEC9);
+    const auto Brown       = juce::Colour(0xFF8B5E3C);
+    const auto LabelBg     = juce::Colour(0x50FFFFFF);   // semi-transparent white
+    const auto KnobWhite   = juce::Colour(0xFFF5F5F5);
+    const auto KnobShadow  = juce::Colour(0x40000000);
+    const auto KnobSlot    = juce::Colour(0xFFCCCCCC);
 }
 
 // ================================================================
-// Look and Feel — pedal style
+// Look and Feel — big chunky white knobs like hardware pedal
 // ================================================================
-AetherEditor::PedalLookAndFeel::PedalLookAndFeel()
+AetherEditor::CrayonLookAndFeel::CrayonLookAndFeel()
 {
-    setColour(juce::Label::textColourId, Pedal::White);
+    setColour(juce::Label::textColourId, Sky::Black);
 }
 
-void AetherEditor::PedalLookAndFeel::drawRotarySlider(
+void AetherEditor::CrayonLookAndFeel::drawRotarySlider(
     juce::Graphics& g, int x, int y, int w, int h,
     float sliderPos, float rotaryStartAngle, float rotaryEndAngle, juce::Slider&)
 {
     auto bounds = juce::Rectangle<float>((float)x, (float)y, (float)w, (float)h);
-    auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f - 4.0f;
+    auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f - 2.0f;
     auto centre = bounds.getCentre();
     auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
-    // Knob body — dark circle with metallic look
-    g.setColour(Pedal::MetalLight);
+    // Drop shadow
+    g.setColour(Sky::KnobShadow);
+    g.fillEllipse(centre.x - radius + 2, centre.y - radius + 2, radius * 2.0f, radius * 2.0f);
+
+    // White knob body (like real hardware pedal knob)
+    juce::ColourGradient knobGrad(Sky::White, centre.x - radius * 0.3f, centre.y - radius * 0.3f,
+                                   Sky::KnobSlot, centre.x + radius * 0.5f, centre.y + radius * 0.5f, true);
+    g.setGradientFill(knobGrad);
     g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f);
 
-    // Crayon-drawn ring (thick, slightly rough)
-    juce::Path arcBg;
-    arcBg.addCentredArc(centre.x, centre.y, radius - 2.0f, radius - 2.0f,
-                         0.0f, rotaryStartAngle, rotaryEndAngle, true);
-    g.setColour(Pedal::White.withAlpha(0.15f));
-    g.strokePath(arcBg, juce::PathStrokeType(4.0f));
+    // Subtle rim
+    g.setColour(juce::Colour(0x20000000));
+    g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f, 1.5f);
 
-    // Value arc — hot pink crayon
-    juce::Path arcVal;
-    arcVal.addCentredArc(centre.x, centre.y, radius - 2.0f, radius - 2.0f,
-                          0.0f, rotaryStartAngle, angle, true);
-    g.setColour(Pedal::HotPink);
-    g.strokePath(arcVal, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved,
-                                               juce::PathStrokeType::rounded));
-
-    // Inner circle
-    float innerR = radius * 0.52f;
-    g.setColour(Pedal::Metal);
-    g.fillEllipse(centre.x - innerR, centre.y - innerR, innerR * 2.0f, innerR * 2.0f);
-
-    // Crayon outline
-    g.setColour(Pedal::Outline.withAlpha(0.5f));
-    g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f, 2.5f);
-
-    // Pointer line
-    juce::Path pointer;
-    auto pointerLen = radius * 0.72f;
-    pointer.addRectangle(-1.5f, -pointerLen, 3.0f, pointerLen * 0.42f);
-    pointer.applyTransform(juce::AffineTransform::rotation(angle).translated(centre.x, centre.y));
-    g.setColour(Pedal::Yellow);
-    g.fillPath(pointer);
+    // Indicator notch/slot (like real knob)
+    float notchLen = radius * 0.35f;
+    float notchStartR = radius * 0.15f;
+    float nx1 = centre.x + std::sin(angle) * notchStartR;
+    float ny1 = centre.y - std::cos(angle) * notchStartR;
+    float nx2 = centre.x + std::sin(angle) * (notchStartR + notchLen);
+    float ny2 = centre.y - std::cos(angle) * (notchStartR + notchLen);
+    g.setColour(juce::Colour(0xFF888888));
+    g.drawLine(nx1, ny1, nx2, ny2, 2.5f);
 }
 
-void AetherEditor::PedalLookAndFeel::drawToggleButton(
+void AetherEditor::CrayonLookAndFeel::drawToggleButton(
     juce::Graphics& g, juce::ToggleButton& button, bool, bool)
 {
     auto bounds = button.getLocalBounds().toFloat().reduced(2.0f);
@@ -97,22 +80,21 @@ void AetherEditor::PedalLookAndFeel::drawToggleButton(
 
     if (isBypass)
     {
-        // LED-style: green=active, red=bypassed
-        g.setColour(on ? Pedal::Red.withAlpha(0.6f) : Pedal::Green.withAlpha(0.7f));
-        g.fillRoundedRectangle(bounds, 5.0f);
-        g.setColour(Pedal::Outline.withAlpha(0.4f));
-        g.drawRoundedRectangle(bounds, 5.0f, 1.5f);
-        g.setColour(Pedal::White);
+        g.setColour(on ? Sky::CrayonRed.withAlpha(0.8f) : Sky::CrayonGreen.withAlpha(0.8f));
+        g.fillRoundedRectangle(bounds, 6.0f);
+        g.setColour(Sky::Black.withAlpha(0.3f));
+        g.drawRoundedRectangle(bounds, 6.0f, 1.5f);
+        g.setColour(Sky::White);
         g.setFont(juce::Font(11.0f).boldened());
         g.drawText(on ? "OFF" : "ON", bounds, juce::Justification::centred);
     }
     else
     {
-        g.setColour(on ? Pedal::Teal.withAlpha(0.7f) : Pedal::MetalLight);
-        g.fillRoundedRectangle(bounds, 5.0f);
-        g.setColour(Pedal::Outline.withAlpha(0.4f));
-        g.drawRoundedRectangle(bounds, 5.0f, 1.5f);
-        g.setColour(Pedal::White);
+        g.setColour(on ? Sky::CrayonTeal.withAlpha(0.8f) : juce::Colour(0xFFBBBBBB));
+        g.fillRoundedRectangle(bounds, 6.0f);
+        g.setColour(Sky::Black.withAlpha(0.3f));
+        g.drawRoundedRectangle(bounds, 6.0f, 1.5f);
+        g.setColour(on ? Sky::White : Sky::Black);
         g.setFont(juce::Font(10.0f).boldened());
         g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
     }
@@ -124,7 +106,7 @@ void AetherEditor::PedalLookAndFeel::drawToggleButton(
 AetherEditor::AetherEditor(AetherProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
-    setLookAndFeel(&pedalLnf);
+    setLookAndFeel(&crayonLnf);
     setSize(1020, 620);
 
     auto setupKnob = [&](juce::Slider& s) {
@@ -133,24 +115,17 @@ AetherEditor::AetherEditor(AetherProcessor& p)
         addAndMakeVisible(s);
     };
 
-    // Swell
     setupKnob(swellSens); setupKnob(swellAttack); setupKnob(swellDepth);
-    // Vinyl (year + detune only)
     setupKnob(vinylYear); setupKnob(vinylDetune);
-    // Psyche
     setupKnob(psycheShimmer); setupKnob(psycheSpace); setupKnob(psycheMod);
     setupKnob(psycheWarp); setupKnob(psycheMix); setupKnob(psycheNotches); setupKnob(psycheSweep);
-    // LFO
     setupKnob(lfoShape); setupKnob(lfoRate); setupKnob(lfoDepth);
     setupKnob(lfoSyncRate); setupKnob(lfoPhaseOffset);
-    // Master
     setupKnob(masterMix); setupKnob(masterGain);
 
-    // Toggles
     for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync })
         addAndMakeVisible(*b);
 
-    // Labels
     addLabel(swellSens, "SENS"); addLabel(swellAttack, "ATK"); addLabel(swellDepth, "DEPTH");
     addLabel(vinylYear, "YEAR"); addLabel(vinylDetune, "DETUNE");
     addLabel(psycheShimmer, "SHIMMER"); addLabel(psycheSpace, "SPACE"); addLabel(psycheMod, "MOD");
@@ -159,7 +134,6 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     addLabel(lfoSyncRate, "DIV"); addLabel(lfoPhaseOffset, "PHASE");
     addLabel(masterMix, "MIX"); addLabel(masterGain, "GAIN");
 
-    // Attachments
     auto& apvts = processor.apvts;
     aSwellSens    = std::make_unique<SliderAttachment>(apvts, "swellSens",    swellSens);
     aSwellAttack  = std::make_unique<SliderAttachment>(apvts, "swellAttack",  swellAttack);
@@ -196,56 +170,37 @@ AetherEditor::~AetherEditor()
 }
 
 // ================================================================
-// Swimmers + stars
+// Swimmers
 // ================================================================
 void AetherEditor::initSwimmers()
 {
-    std::mt19937 rng(54321);
-    std::uniform_real_distribution<float> yDist(40.0f, 580.0f);
-    std::uniform_real_distribution<float> sizeDist(28.0f, 50.0f);
-    std::uniform_real_distribution<float> speedDist(0.4f, 1.8f);
+    std::mt19937 rng(12345);
+    std::uniform_real_distribution<float> yDist(80.0f, 560.0f);
+    std::uniform_real_distribution<float> sizeDist(25.0f, 42.0f);
+    std::uniform_real_distribution<float> speedDist(0.3f, 1.2f);
     std::uniform_real_distribution<float> phaseDist(0.0f, 6.28f);
-    std::uniform_int_distribution<int> typeDist(0, 2);
+    std::uniform_int_distribution<int> typeDist(0, 5);
     std::uniform_int_distribution<int> dirDist(0, 1);
 
-    juce::Colour dressColors[] = {
-        Pedal::Pink, Pedal::CrayonPurple, Pedal::CrayonBlue,
-        Pedal::CrayonGreen, Pedal::HotPink, Pedal::CrayonYellow
+    juce::Colour colors[] = {
+        Sky::CrayonRed, Sky::CrayonPink, Sky::CrayonOrange,
+        Sky::CrayonGreen, Sky::CrayonPurple, Sky::CrayonTeal
     };
 
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         Swimmer s;
         s.type = typeDist(rng);
         s.goingRight = dirDist(rng) == 1;
-        s.startX = s.goingRight ? -80.0f : 1100.0f;
         s.y = yDist(rng);
         s.speed = speedDist(rng);
         s.size = sizeDist(rng);
         s.phaseOffset = phaseDist(rng);
-        s.colour = dressColors[i % 6];
+        s.colour = colors[i % 6];
         swimmers.push_back(s);
-    }
-
-    // Background sparkle stars
-    std::uniform_real_distribution<float> xDist(10.0f, 1010.0f);
-    std::uniform_real_distribution<float> starSizeDist(2.0f, 5.0f);
-    std::uniform_real_distribution<float> starSpeedDist(1.5f, 4.0f);
-    for (int i = 0; i < 30; ++i)
-    {
-        BgStar st;
-        st.x = xDist(rng);
-        st.y = yDist(rng);
-        st.phase = phaseDist(rng);
-        st.speed = starSpeedDist(rng);
-        st.size = starSizeDist(rng);
-        bgStars.push_back(st);
     }
 }
 
-// ================================================================
-// Timer
-// ================================================================
 void AetherEditor::timerCallback()
 {
     animTime += 1.0f / 30.0f;
@@ -258,42 +213,40 @@ void AetherEditor::timerCallback()
 void AetherEditor::resized()
 {
     int W = getWidth();
-    int knobW = 58, knobH = 58;
+    int knobW = 62, knobH = 62;
     int labelH = 14;
     int pad = 6;
-    int sectionY = 85;
+    int sectionY = 100;
     int sectionH = 240;
     int sectionW = (W - 50) / 4;
 
     int sx0 = 15;
-    auto swell  = juce::Rectangle<int>(sx0, sectionY, sectionW, sectionH);
-    auto vinyl  = juce::Rectangle<int>(sx0 + sectionW + 5, sectionY, sectionW, sectionH);
-    auto psyche = juce::Rectangle<int>(sx0 + (sectionW + 5) * 2, sectionY, sectionW, sectionH);
-    auto lfoSec = juce::Rectangle<int>(sx0 + (sectionW + 5) * 3, sectionY, sectionW, sectionH);
 
     auto placeKnob = [&](juce::Slider& s, int bx, int by) {
         s.setBounds(bx, by, knobW, knobH);
     };
 
-    int knobY1 = sectionY + 42;
-    int knobY2 = sectionY + 42 + knobH + labelH + pad;
-    int knobGap = knobW + 4;
+    int knobY1 = sectionY + 45;
+    int knobY2 = sectionY + 45 + knobH + labelH + pad;
+    int knobGap = knobW + 6;
 
-    // Swell (3 knobs, single row, centered)
-    int sc = swell.getCentreX() - knobW * 3 / 2 - 2;
+    // Swell (3 knobs centered)
+    int sc = sx0 + sectionW / 2 - knobW * 3 / 2 - 4;
     placeKnob(swellSens, sc, knobY1);
     placeKnob(swellAttack, sc + knobGap, knobY1);
     placeKnob(swellDepth, sc + knobGap * 2, knobY1);
-    swellBypass.setBounds(swell.getX() + 4, swell.getY() + 6, 32, 22);
+    swellBypass.setBounds(sx0 + 6, sectionY + 8, 34, 24);
 
-    // Vinyl (2 knobs, centered)
-    int vc = vinyl.getCentreX() - knobW - 2;
+    // Vinyl (2 knobs centered)
+    int vx = sx0 + sectionW + 5;
+    int vc = vx + sectionW / 2 - knobW - 4;
     placeKnob(vinylYear, vc, knobY1);
     placeKnob(vinylDetune, vc + knobGap, knobY1);
-    vinylBypass.setBounds(vinyl.getX() + 4, vinyl.getY() + 6, 32, 22);
+    vinylBypass.setBounds(vx + 6, sectionY + 8, 34, 24);
 
     // Psyche (7 knobs, 2 rows: 4+3)
-    int pc = psyche.getX() + 2;
+    int px = sx0 + (sectionW + 5) * 2;
+    int pc = px + 4;
     int pGap = knobW + 1;
     placeKnob(psycheShimmer, pc, knobY1);
     placeKnob(psycheSpace, pc + pGap, knobY1);
@@ -302,25 +255,25 @@ void AetherEditor::resized()
     placeKnob(psycheMix, pc, knobY2);
     placeKnob(psycheNotches, pc + pGap, knobY2);
     placeKnob(psycheSweep, pc + pGap * 2, knobY2);
-    psycheBypass.setBounds(psyche.getX() + 4, psyche.getY() + 6, 32, 22);
+    psycheBypass.setBounds(px + 6, sectionY + 8, 34, 24);
 
     // LFO (5 knobs + sync, 2 rows)
-    int lc = lfoSec.getX() + 8;
+    int lx = sx0 + (sectionW + 5) * 3;
+    int lc = lx + 8;
     placeKnob(lfoShape, lc, knobY1);
     placeKnob(lfoRate, lc + knobGap, knobY1);
     placeKnob(lfoDepth, lc + knobGap * 2, knobY1);
     placeKnob(lfoSyncRate, lc, knobY2);
     placeKnob(lfoPhaseOffset, lc + knobGap, knobY2);
-    lfoSync.setBounds(lc + knobGap * 2, knobY2 + 10, 50, 28);
-    lfoBypass.setBounds(lfoSec.getX() + 4, lfoSec.getY() + 6, 32, 22);
+    lfoSync.setBounds(lc + knobGap * 2, knobY2 + 12, 52, 28);
+    lfoBypass.setBounds(lx + 6, sectionY + 8, 34, 24);
 
     // Master (bottom center)
-    int my = sectionY + sectionH + 30;
+    int my = sectionY + sectionH + 40;
     int mx = W / 2 - knobGap;
     placeKnob(masterMix, mx, my);
     placeKnob(masterGain, mx + knobGap, my);
 
-    // Update label positions
     for (auto& lbl : labels)
     {
         if (auto* slider = dynamic_cast<juce::Slider*>(lbl->getAttachedComponent()))
@@ -331,14 +284,11 @@ void AetherEditor::resized()
     }
 }
 
-// ================================================================
-// Label helper
-// ================================================================
 juce::Label& AetherEditor::addLabel(juce::Slider& s, const juce::String& text)
 {
     auto lbl = std::make_unique<juce::Label>("", text);
     lbl->setFont(juce::Font(10.0f).boldened());
-    lbl->setColour(juce::Label::textColourId, Pedal::White.withAlpha(0.8f));
+    lbl->setColour(juce::Label::textColourId, Sky::Black.withAlpha(0.8f));
     lbl->setJustificationType(juce::Justification::centred);
     lbl->attachToComponent(&s, false);
     addAndMakeVisible(*lbl);
@@ -352,112 +302,143 @@ juce::Label& AetherEditor::addLabel(juce::Slider& s, const juce::String& text)
 // ================================================================
 void AetherEditor::paint(juce::Graphics& g)
 {
-    drawPedalBackground(g);
+    drawSkyBackground(g);
+    drawDoodles(g);
+    drawSwimmingCharacters(g);
 
     int W = getWidth();
-    int sectionY = 85;
+    int sectionY = 100;
     int sectionH = 240;
     int sectionW = (W - 50) / 4;
     int sx0 = 15;
 
-    drawSectionBox(g, {sx0, sectionY, sectionW, sectionH}, Pedal::SectionPink, "SWELL");
-    drawSectionBox(g, {sx0 + sectionW + 5, sectionY, sectionW, sectionH}, Pedal::SectionBlue, "VINYL");
-    drawSectionBox(g, {sx0 + (sectionW + 5) * 2, sectionY, sectionW, sectionH}, Pedal::SectionPurple, "PSYCHE");
-    drawSectionBox(g, {sx0 + (sectionW + 5) * 3, sectionY, sectionW, sectionH}, Pedal::SectionGreen, "LFO");
-
-    // Crayon scribbles/doodles on the pedal surface (decorative)
-    drawCrayonScribble(g, 20.0f, 350.0f, 80.0f, 40.0f, Pedal::CrayonPink, 111);
-    drawCrayonScribble(g, 920.0f, 370.0f, 70.0f, 35.0f, Pedal::CrayonBlue, 222);
-    drawCrayonScribble(g, 450.0f, 560.0f, 90.0f, 30.0f, Pedal::CrayonGreen, 333);
-    drawCrayonScribble(g, 750.0f, 345.0f, 60.0f, 50.0f, Pedal::CrayonYellow, 444);
-    drawCrayonScribble(g, 150.0f, 555.0f, 70.0f, 25.0f, Pedal::CrayonPurple, 555);
-
-    // Background sparkle stars
-    for (auto& st : bgStars)
+    // Section backgrounds (semi-transparent white boxes with crayon borders)
+    auto drawSection = [&](int x, int y, int w, int h, juce::Colour borderCol, const juce::String& title)
     {
-        float alpha = 0.2f + 0.5f * (0.5f + 0.5f * std::sin(animTime * st.speed + st.phase));
-        g.setColour(Pedal::Yellow.withAlpha(alpha * 0.5f));
-        drawStar(g, st.x, st.y, st.size, alpha);
-    }
+        auto r = juce::Rectangle<float>((float)x, (float)y, (float)w, (float)h);
+        // White translucent fill
+        g.setColour(juce::Colour(0x60FFFFFF));
+        g.fillRoundedRectangle(r, 10.0f);
+        // Thick crayon border
+        g.setColour(borderCol);
+        g.drawRoundedRectangle(r, 10.0f, 3.0f);
+        // Title
+        g.setColour(borderCol.darker(0.2f));
+        g.setFont(juce::Font(14.0f).boldened());
+        g.drawText(title, x + 42, y + 6, w - 48, 20, juce::Justification::left);
+    };
 
-    // Swimming characters (drawn on top of background, behind controls)
-    drawSwimmingCharacters(g);
+    drawSection(sx0, sectionY, sectionW, sectionH, Sky::CrayonPink, "SWELL");
+    drawSection(sx0 + sectionW + 5, sectionY, sectionW, sectionH, Sky::CrayonOrange, "VINYL");
+    drawSection(sx0 + (sectionW + 5) * 2, sectionY, sectionW, sectionH, Sky::CrayonPurple, "PSYCHE");
+    drawSection(sx0 + (sectionW + 5) * 3, sectionY, sectionW, sectionH, Sky::CrayonGreen, "LFO");
 
     drawTitle(g);
 
     // Master label
-    int my = sectionY + sectionH + 16;
-    g.setColour(Pedal::White.withAlpha(0.6f));
-    g.setFont(juce::Font(13.0f).boldened());
+    int my = sectionY + sectionH + 24;
+    g.setColour(Sky::Black.withAlpha(0.7f));
+    g.setFont(juce::Font(14.0f).boldened());
     g.drawText("MASTER", 0, my, W, 16, juce::Justification::centred);
 
     // LFO info display
     {
         int lShape = static_cast<int>(lfoShape.getValue());
-        int lSync = static_cast<int>(lfoSyncRate.getValue());
+        int lSyncR = static_cast<int>(lfoSyncRate.getValue());
         bool synced = lfoSync.getToggleState();
         juce::String info = LFOProcessor::shapeName(lShape);
         if (synced)
-            info += juce::String(" | ") + LFOProcessor::syncRateName(lSync);
+            info += juce::String(" | ") + LFOProcessor::syncRateName(lSyncR);
         int lfoX = sx0 + (sectionW + 5) * 3;
-        g.setColour(Pedal::White.withAlpha(0.6f));
+        g.setColour(Sky::Black.withAlpha(0.5f));
         g.setFont(juce::Font(10.0f));
         g.drawText(info, lfoX, sectionY + sectionH - 18, sectionW, 16, juce::Justification::centred);
     }
 
     // Version
-    g.setColour(Pedal::White.withAlpha(0.25f));
+    g.setColour(Sky::Black.withAlpha(0.2f));
     g.setFont(juce::Font(9.0f));
-    g.drawText("v3.0 // artemis", 0, getHeight() - 14, getWidth() - 8, 12, juce::Justification::centredRight);
+    g.drawText("v3.0 // aether audio", 0, getHeight() - 14, getWidth() - 8, 12, juce::Justification::centredRight);
 }
 
 // ================================================================
-// Pedal background (dark brushed metal with crayon doodles)
+// Sky background — bright blue gradient with clouds and sun
 // ================================================================
-void AetherEditor::drawPedalBackground(juce::Graphics& g)
+void AetherEditor::drawSkyBackground(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
+    // Blue sky gradient (lighter at top, slightly darker at bottom)
+    juce::ColourGradient skyGrad(Sky::BlueLight, 0.0f, 0.0f,
+                                  Sky::Blue, 0.0f, (float)getHeight(), false);
+    skyGrad.addColour(0.4, Sky::Blue);
+    g.setGradientFill(skyGrad);
+    g.fillRect(getLocalBounds());
 
-    // Dark brushed metal base
-    g.setColour(Pedal::Metal);
-    g.fillRect(bounds);
-
-    // Subtle horizontal brushed-metal texture
-    std::mt19937 texRng(99999);
-    std::uniform_real_distribution<float> texDist(0.0f, 1.0f);
-    for (int y = 0; y < getHeight(); y += 2)
+    // Green grass strip at very bottom
+    g.setColour(Sky::CrayonGreen.withAlpha(0.3f));
+    g.fillRect(0, getHeight() - 30, getWidth(), 30);
+    // Wavy grass line
+    juce::Path grassLine;
+    grassLine.startNewSubPath(0, (float)(getHeight() - 30));
+    for (float x = 0; x <= (float)getWidth(); x += 15.0f)
     {
-        float alpha = texDist(texRng) * 0.06f;
-        g.setColour(Pedal::White.withAlpha(alpha));
-        g.drawHorizontalLine(y, 0.0f, (float)getWidth());
+        float gy = (float)(getHeight() - 30) + std::sin(x * 0.05f + animTime * 0.5f) * 4.0f;
+        grassLine.lineTo(x, gy);
     }
+    g.setColour(Sky::CrayonGreen.withAlpha(0.5f));
+    g.strokePath(grassLine, juce::PathStrokeType(2.5f));
 
-    // Pedal outline (thick border like stamped metal)
-    g.setColour(Pedal::MetalEdge);
-    g.drawRect(bounds.reduced(2.0f), 4.0f);
-    g.setColour(Pedal::MetalLight.withAlpha(0.3f));
-    g.drawRect(bounds.reduced(6.0f), 1.0f);
+    // Sun (top right, with rays)
+    drawSun(g, (float)(getWidth() - 70), 55.0f, 35.0f);
 
-    // Screw holes in corners (pedal detail)
-    float screwR = 6.0f;
-    juce::Colour screwCol = Pedal::MetalEdge;
-    float inset = 14.0f;
-    for (auto& pos : {
-        juce::Point<float>(inset, inset),
-        juce::Point<float>((float)getWidth() - inset, inset),
-        juce::Point<float>(inset, (float)getHeight() - inset),
-        juce::Point<float>((float)getWidth() - inset, (float)getHeight() - inset)
-    })
+    // Clouds
+    drawCloud(g, 60.0f, 25.0f, 70.0f);
+    drawCloud(g, 280.0f, 15.0f, 55.0f);
+    drawCloud(g, 520.0f, 30.0f, 65.0f);
+    drawCloud(g, 750.0f, 20.0f, 50.0f);
+}
+
+void AetherEditor::drawCloud(juce::Graphics& g, float x, float y, float w)
+{
+    float h = w * 0.45f;
+    g.setColour(Sky::White.withAlpha(0.85f));
+    // 3 overlapping circles = puffy cloud
+    g.fillEllipse(x, y + h * 0.2f, w * 0.5f, h * 0.7f);
+    g.fillEllipse(x + w * 0.2f, y, w * 0.55f, h * 0.85f);
+    g.fillEllipse(x + w * 0.45f, y + h * 0.15f, w * 0.5f, h * 0.7f);
+    // Crayon outline
+    g.setColour(Sky::BlueDark.withAlpha(0.15f));
+    g.drawEllipse(x, y + h * 0.2f, w * 0.5f, h * 0.7f, 1.5f);
+    g.drawEllipse(x + w * 0.2f, y, w * 0.55f, h * 0.85f, 1.5f);
+    g.drawEllipse(x + w * 0.45f, y + h * 0.15f, w * 0.5f, h * 0.7f, 1.5f);
+}
+
+void AetherEditor::drawSun(juce::Graphics& g, float x, float y, float r)
+{
+    // Rays
+    int numRays = 12;
+    for (int i = 0; i < numRays; ++i)
     {
-        g.setColour(screwCol);
-        g.fillEllipse(pos.x - screwR, pos.y - screwR, screwR * 2, screwR * 2);
-        g.setColour(Pedal::MetalLight.withAlpha(0.5f));
-        g.drawEllipse(pos.x - screwR, pos.y - screwR, screwR * 2, screwR * 2, 1.0f);
-        // Phillips head cross
-        g.setColour(Pedal::MetalLight.withAlpha(0.3f));
-        g.drawLine(pos.x - 3, pos.y, pos.x + 3, pos.y, 1.0f);
-        g.drawLine(pos.x, pos.y - 3, pos.x, pos.y + 3, 1.0f);
+        float a = (float)i / (float)numRays * juce::MathConstants<float>::twoPi
+                  + animTime * 0.3f;
+        float innerR = r * 1.2f;
+        float outerR = r * 1.8f + std::sin(animTime * 2.0f + (float)i) * 4.0f;
+        g.setColour(Sky::SunYellow.withAlpha(0.4f));
+        g.drawLine(x + std::cos(a) * innerR, y + std::sin(a) * innerR,
+                   x + std::cos(a) * outerR, y + std::sin(a) * outerR, 2.5f);
     }
+    // Sun body
+    g.setColour(Sky::SunYellow);
+    g.fillEllipse(x - r, y - r, r * 2, r * 2);
+    g.setColour(Sky::SunOrange.withAlpha(0.3f));
+    g.drawEllipse(x - r, y - r, r * 2, r * 2, 2.0f);
+    // Smiley face
+    g.setColour(Sky::Black.withAlpha(0.6f));
+    g.fillEllipse(x - r * 0.3f, y - r * 0.2f, 4, 4);
+    g.fillEllipse(x + r * 0.15f, y - r * 0.2f, 4, 4);
+    juce::Path smile;
+    smile.addCentredArc(x, y + r * 0.1f, r * 0.3f, r * 0.15f,
+                         0.0f, 0.2f, juce::MathConstants<float>::pi - 0.2f, true);
+    g.strokePath(smile, juce::PathStrokeType(1.5f));
 }
 
 // ================================================================
@@ -466,28 +447,36 @@ void AetherEditor::drawPedalBackground(juce::Graphics& g)
 void AetherEditor::drawTitle(juce::Graphics& g)
 {
     juce::String title = "AETHER";
-    auto font = juce::Font(44.0f).boldened();
+    auto font = juce::Font(48.0f).boldened();
     g.setFont(font);
 
     float titleW = font.getStringWidthFloat(title);
     float startX = ((float)getWidth() - titleW) * 0.5f;
-    float y = 18.0f;
+    float y = 42.0f;
 
-    juce::Colour rainbow[] = { Pedal::Red, Pedal::Orange, Pedal::Yellow,
-                                Pedal::Green, Pedal::Blue, Pedal::Purple };
+    juce::Colour rainbow[] = {
+        Sky::CrayonRed, Sky::CrayonOrange, Sky::CrayonYellow,
+        Sky::CrayonGreen, Sky::CrayonTeal, Sky::CrayonPurple
+    };
 
     for (int i = 0; i < title.length(); ++i)
     {
         juce::String ch = title.substring(i, i + 1);
         float cw = font.getStringWidthFloat(ch);
-        float bounce = std::sin(animTime * 2.5f + i * 0.8f) * 5.0f;
+        float bounce = std::sin(animTime * 2.5f + i * 0.8f) * 6.0f;
 
-        // Glow
-        g.setColour(rainbow[i % 6].withAlpha(0.2f));
-        g.drawText(ch, (int)(startX - 1), (int)(y + bounce - 1), (int)cw + 4, 55,
+        // Dark outline/shadow for readability on blue sky
+        g.setColour(Sky::Black.withAlpha(0.3f));
+        g.drawText(ch, (int)(startX + 2), (int)(y + bounce + 2), (int)cw + 2, 55,
                    juce::Justification::left);
-        g.drawText(ch, (int)(startX + 1), (int)(y + bounce + 1), (int)cw + 4, 55,
-                   juce::Justification::left);
+        // White outline
+        for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                g.setColour(Sky::White.withAlpha(0.6f));
+                g.drawText(ch, (int)(startX + dx), (int)(y + bounce + dy), (int)cw + 2, 55,
+                           juce::Justification::left);
+            }
 
         g.setColour(rainbow[i % 6]);
         g.drawText(ch, (int)startX, (int)(y + bounce), (int)cw + 2, 55,
@@ -496,92 +485,51 @@ void AetherEditor::drawTitle(juce::Graphics& g)
         startX += cw;
     }
 
-    g.setColour(Pedal::White.withAlpha(0.4f));
+    g.setColour(Sky::White.withAlpha(0.7f));
     g.setFont(juce::Font(11.0f).italicised());
-    g.drawText("psychedelic guitar processor", 0, 60, getWidth(), 16, juce::Justification::centred);
+    g.drawText("psychedelic guitar processor", 0, 82, getWidth(), 14, juce::Justification::centred);
 }
 
 // ================================================================
-// Section boxes (wobbly crayon borders on dark metal)
+// Static doodles (crayon drawings scattered on the sky)
 // ================================================================
-void AetherEditor::drawSectionBox(juce::Graphics& g, juce::Rectangle<int> bounds,
-                                   juce::Colour colour, const juce::String& title)
+void AetherEditor::drawDoodles(juce::Graphics& g)
 {
-    auto r = bounds.toFloat().reduced(2.0f);
+    // Small static crayon doodles in the margins/corners -- like a kid decorated the panel
+    // Little stars
+    g.setColour(Sky::CrayonYellow.withAlpha(0.5f));
+    drawStar4(g, 30, 570, 8);
+    drawStar4(g, 990, 580, 6);
+    drawStar4(g, 500, 560, 7);
+    drawStar4(g, 120, 590, 5);
+    drawStar4(g, 870, 560, 9);
 
-    // Semi-transparent fill
-    g.setColour(colour);
-    auto wobbled = makeWobblyRect(r, 3.0f, static_cast<unsigned int>(bounds.getX() * 7 + bounds.getY()));
-    g.fillPath(wobbled);
+    // Music notes (simple crayon style)
+    auto drawNote = [&](float nx, float ny, juce::Colour c) {
+        g.setColour(c.withAlpha(0.35f));
+        g.fillEllipse(nx, ny, 8, 6);
+        g.drawLine(nx + 7, ny + 3, nx + 7, ny - 14, 2.0f);
+        g.drawLine(nx + 7, ny - 14, nx + 14, ny - 11, 2.0f);
+    };
+    drawNote(45, 400, Sky::CrayonPurple);
+    drawNote(970, 420, Sky::CrayonPink);
+    drawNote(200, 550, Sky::CrayonOrange);
+    drawNote(820, 540, Sky::CrayonGreen);
 
-    // Crayon-drawn border (thick, white-ish)
-    g.setColour(Pedal::Outline.withAlpha(0.35f));
-    g.strokePath(wobbled, juce::PathStrokeType(2.5f));
-
-    // Section title (crayon style)
-    g.setColour(Pedal::White.withAlpha(0.9f));
-    g.setFont(juce::Font(13.0f).boldened());
-    g.drawText(title, bounds.getX() + 38, bounds.getY() + 6, bounds.getWidth() - 42, 18,
-               juce::Justification::left);
-}
-
-// ================================================================
-// Wobbly rectangle
-// ================================================================
-juce::Path AetherEditor::makeWobblyRect(juce::Rectangle<float> r, float wobble, unsigned int seed)
-{
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<float> dist(-wobble, wobble);
-    juce::Path p;
-    int steps = 10;
-    p.startNewSubPath(r.getX() + dist(rng), r.getY() + dist(rng));
-    for (int i = 1; i <= steps; ++i)
-    {
-        float t = (float)i / (float)steps;
-        p.lineTo(r.getX() + r.getWidth() * t + dist(rng), r.getY() + dist(rng));
-    }
-    for (int i = 1; i <= steps; ++i)
-    {
-        float t = (float)i / (float)steps;
-        p.lineTo(r.getRight() + dist(rng), r.getY() + r.getHeight() * t + dist(rng));
-    }
-    for (int i = 1; i <= steps; ++i)
-    {
-        float t = (float)i / (float)steps;
-        p.lineTo(r.getRight() - r.getWidth() * t + dist(rng), r.getBottom() + dist(rng));
-    }
-    for (int i = 1; i <= steps; ++i)
-    {
-        float t = (float)i / (float)steps;
-        p.lineTo(r.getX() + dist(rng), r.getBottom() - r.getHeight() * t + dist(rng));
-    }
-    p.closeSubPath();
-    return p;
-}
-
-// ================================================================
-// Crayon scribble decorations
-// ================================================================
-void AetherEditor::drawCrayonScribble(juce::Graphics& g, float x, float y,
-                                       float w, float h, juce::Colour colour, unsigned int seed)
-{
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<float> dx(-3.0f, 3.0f);
-    std::uniform_real_distribution<float> dy(-3.0f, 3.0f);
-
-    g.setColour(colour.withAlpha(0.15f));
-    juce::Path scribble;
-    scribble.startNewSubPath(x + dx(rng), y + dy(rng));
-    int loops = 6;
-    for (int i = 0; i < loops; ++i)
-    {
-        float t = (float)i / (float)loops;
-        float sx = x + t * w + dx(rng);
-        float sy = y + std::sin(t * 4.0f) * h * 0.5f + h * 0.5f + dy(rng);
-        scribble.lineTo(sx, sy);
-    }
-    g.strokePath(scribble, juce::PathStrokeType(3.0f, juce::PathStrokeType::curved,
-                                                  juce::PathStrokeType::rounded));
+    // Tiny hearts
+    auto drawHeart = [&](float hx, float hy, float hs, juce::Colour c) {
+        g.setColour(c.withAlpha(0.3f));
+        g.fillEllipse(hx - hs * 0.5f, hy - hs * 0.3f, hs * 0.55f, hs * 0.5f);
+        g.fillEllipse(hx, hy - hs * 0.3f, hs * 0.55f, hs * 0.5f);
+        juce::Path tri;
+        tri.startNewSubPath(hx - hs * 0.5f, hy);
+        tri.lineTo(hx + hs * 0.55f, hy);
+        tri.lineTo(hx + hs * 0.025f, hy + hs * 0.5f);
+        tri.closeSubPath();
+        g.fillPath(tri);
+    };
+    drawHeart(80, 480, 14, Sky::CrayonRed);
+    drawHeart(940, 380, 12, Sky::CrayonPink);
 }
 
 // ================================================================
@@ -589,260 +537,309 @@ void AetherEditor::drawCrayonScribble(juce::Graphics& g, float x, float y,
 // ================================================================
 void AetherEditor::drawSwimmingCharacters(juce::Graphics& g)
 {
-    float totalWidth = 1020.0f + 200.0f; // screen + offscreen margins
+    float totalWidth = 1220.0f;
 
     for (auto& s : swimmers)
     {
-        // Calculate horizontal position — characters swim continuously across
         float speed = s.goingRight ? s.speed : -s.speed;
-        float rawX = s.startX + animTime * speed * 30.0f; // 30fps -> pixels/sec
-
-        // Wrap around: when going right, wrap from right edge to left; vice versa
+        float rawX;
         if (s.goingRight)
         {
-            rawX = std::fmod(rawX + 100.0f, totalWidth) - 100.0f;
+            rawX = std::fmod(animTime * speed * 30.0f + s.phaseOffset * 100.0f, totalWidth) - 100.0f;
         }
         else
         {
-            float travel = std::fmod(-animTime * s.speed * 30.0f, totalWidth);
-            rawX = s.startX + travel;
-            if (rawX < -100.0f) rawX += totalWidth;
+            rawX = 1120.0f - std::fmod(animTime * std::abs(speed) * 30.0f + s.phaseOffset * 100.0f, totalWidth);
         }
 
-        // Gentle vertical bobbing (swimming motion)
-        float bobY = s.y + std::sin(animTime * 1.5f + s.phaseOffset) * 12.0f;
-
+        float bobY = s.y + std::sin(animTime * 1.5f + s.phaseOffset) * 10.0f;
         float phase = animTime * 2.0f + s.phaseOffset;
 
         switch (s.type)
         {
-            case 0: drawPrincess(g, rawX, bobY, s.size, phase, s.colour); break;
-            case 1: drawFairy(g, rawX, bobY, s.size, phase, s.colour); break;
-            case 2: drawUnicorn(g, rawX, bobY, s.size, phase); break;
+            case 0: drawMushroom(g, rawX, bobY, s.size, phase, s.colour); break;
+            case 1: drawAlien(g, rawX, bobY, s.size, phase, s.colour); break;
+            case 2: drawFlower(g, rawX, bobY, s.size, phase, s.colour); break;
+            case 3: drawGhost(g, rawX, bobY, s.size, phase); break;
+            case 4: drawBoombox(g, rawX, bobY, s.size, phase); break;
+            case 5: drawCassette(g, rawX, bobY, s.size, phase); break;
         }
     }
 }
 
 // ================================================================
-// Stick-figure Princess (crayon style)
+// Character: Mushroom (psychedelic, crayon style)
 // ================================================================
-void AetherEditor::drawPrincess(juce::Graphics& g, float x, float y, float size,
-                                 float phase, juce::Colour dressCol)
+void AetherEditor::drawMushroom(juce::Graphics& g, float x, float y, float size,
+                                 float phase, juce::Colour cap)
 {
     float s = size;
-    float armSwing = std::sin(phase * 2.0f) * 0.3f;
+    float wobble = std::sin(phase * 2.0f) * 2.0f;
 
-    // Dress (triangle shape, crayon-drawn)
-    juce::Path dress;
-    dress.startNewSubPath(x, y);                         // waist
-    dress.lineTo(x - s * 0.35f, y + s * 0.5f);          // left hem
-    dress.lineTo(x + s * 0.35f, y + s * 0.5f);          // right hem
-    dress.closeSubPath();
-    g.setColour(dressCol.withAlpha(0.7f));
-    g.fillPath(dress);
-    g.setColour(Pedal::Outline.withAlpha(0.5f));
-    g.strokePath(dress, juce::PathStrokeType(2.0f));
+    // Stem
+    g.setColour(Sky::CloudWhite);
+    g.fillRect(x - s * 0.12f + wobble, y, s * 0.24f, s * 0.35f);
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    g.drawRect(x - s * 0.12f + wobble, y, s * 0.24f, s * 0.35f, 1.5f);
 
-    // Body/torso (stick line)
-    g.setColour(Pedal::Outline.withAlpha(0.6f));
-    g.drawLine(x, y - s * 0.15f, x, y, 2.0f);
+    // Cap (half circle)
+    juce::Path capPath;
+    capPath.addCentredArc(x + wobble, y, s * 0.4f, s * 0.28f, 0.0f,
+                           juce::MathConstants<float>::pi, juce::MathConstants<float>::twoPi, true);
+    capPath.closeSubPath();
+    g.setColour(cap);
+    g.fillPath(capPath);
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    g.strokePath(capPath, juce::PathStrokeType(2.0f));
 
-    // Head (circle)
-    float headR = s * 0.12f;
-    g.setColour(Pedal::Cream.withAlpha(0.8f));
-    g.fillEllipse(x - headR, y - s * 0.15f - headR * 2, headR * 2, headR * 2);
-    g.setColour(Pedal::Outline.withAlpha(0.5f));
-    g.drawEllipse(x - headR, y - s * 0.15f - headR * 2, headR * 2, headR * 2, 1.5f);
+    // Polka dots on cap
+    g.setColour(Sky::White.withAlpha(0.7f));
+    g.fillEllipse(x - s * 0.15f + wobble, y - s * 0.18f, s * 0.1f, s * 0.08f);
+    g.fillEllipse(x + s * 0.08f + wobble, y - s * 0.22f, s * 0.08f, s * 0.07f);
+    g.fillEllipse(x + wobble - s * 0.02f, y - s * 0.12f, s * 0.06f, s * 0.05f);
 
-    // Crown (little triangle on head)
-    juce::Path crown;
-    float crownY = y - s * 0.15f - headR * 2 - s * 0.02f;
-    crown.startNewSubPath(x - headR * 0.7f, crownY);
-    crown.lineTo(x - headR * 0.3f, crownY - s * 0.1f);
-    crown.lineTo(x, crownY);
-    crown.lineTo(x + headR * 0.3f, crownY - s * 0.08f);
-    crown.lineTo(x + headR * 0.7f, crownY);
-    g.setColour(Pedal::Yellow.withAlpha(0.8f));
-    g.fillPath(crown);
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    g.strokePath(crown, juce::PathStrokeType(1.5f));
-
-    // Arms (swimming motion!)
-    float armY = y - s * 0.08f;
-    g.setColour(Pedal::Cream.withAlpha(0.7f));
-    g.drawLine(x, armY, x - s * 0.25f - armSwing * s * 0.2f,
-               armY - s * 0.08f + std::sin(phase) * s * 0.1f, 2.0f);
-    g.drawLine(x, armY, x + s * 0.25f + armSwing * s * 0.2f,
-               armY - s * 0.08f - std::sin(phase) * s * 0.1f, 2.0f);
-
-    // Legs (kicking motion)
-    float legY = y + s * 0.5f;
-    g.drawLine(x - s * 0.05f, legY - s * 0.1f, x - s * 0.15f + std::sin(phase * 1.5f) * s * 0.08f,
-               legY + s * 0.1f, 2.0f);
-    g.drawLine(x + s * 0.05f, legY - s * 0.1f, x + s * 0.15f - std::sin(phase * 1.5f) * s * 0.08f,
-               legY + s * 0.1f, 2.0f);
-
-    // Eyes (dot dots)
-    g.setColour(Pedal::Metal);
-    float eyeY = y - s * 0.15f - headR * 1.2f;
-    g.fillEllipse(x - headR * 0.4f, eyeY, 2.5f, 2.5f);
-    g.fillEllipse(x + headR * 0.15f, eyeY, 2.5f, 2.5f);
-
+    // Face (cute!)
+    g.setColour(Sky::Black.withAlpha(0.6f));
+    g.fillEllipse(x - s * 0.06f + wobble, y + s * 0.08f, 3, 3);
+    g.fillEllipse(x + s * 0.04f + wobble, y + s * 0.08f, 3, 3);
     // Smile
     juce::Path smile;
-    smile.addCentredArc(x, eyeY + headR * 0.5f, headR * 0.3f, headR * 0.15f,
-                         0.0f, 0.1f, juce::MathConstants<float>::pi - 0.1f, true);
-    g.setColour(Pedal::HotPink.withAlpha(0.6f));
+    smile.addCentredArc(x + wobble, y + s * 0.16f, s * 0.06f, s * 0.03f,
+                         0.0f, 0.2f, juce::MathConstants<float>::pi - 0.2f, true);
     g.strokePath(smile, juce::PathStrokeType(1.2f));
 }
 
 // ================================================================
-// Fairy (stick figure with wings + wand)
+// Character: Alien (3-eyed, crayon style)
 // ================================================================
-void AetherEditor::drawFairy(juce::Graphics& g, float x, float y, float size,
-                              float phase, juce::Colour glowCol)
+void AetherEditor::drawAlien(juce::Graphics& g, float x, float y, float size,
+                              float phase, juce::Colour body)
 {
     float s = size;
-    float wingFlap = std::sin(phase * 4.0f) * 0.2f;
+    float bob = std::sin(phase * 1.5f) * 3.0f;
 
-    // Wings (butterfly shape, translucent)
-    g.setColour(glowCol.withAlpha(0.3f));
-    float wingW = s * 0.3f + wingFlap * s * 0.15f;
-    float wingH = s * 0.25f;
-    g.fillEllipse(x - wingW - s * 0.05f, y - wingH * 0.5f - s * 0.05f, wingW, wingH);
-    g.fillEllipse(x + s * 0.05f, y - wingH * 0.5f - s * 0.05f, wingW, wingH);
-    // Lower wings (smaller)
-    g.setColour(glowCol.withAlpha(0.2f));
-    g.fillEllipse(x - wingW * 0.7f - s * 0.03f, y + s * 0.02f, wingW * 0.7f, wingH * 0.6f);
-    g.fillEllipse(x + s * 0.03f, y + s * 0.02f, wingW * 0.7f, wingH * 0.6f);
+    // Body (oval)
+    g.setColour(body.withAlpha(0.7f));
+    g.fillEllipse(x - s * 0.22f, y - s * 0.15f + bob, s * 0.44f, s * 0.5f);
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    g.drawEllipse(x - s * 0.22f, y - s * 0.15f + bob, s * 0.44f, s * 0.5f, 1.8f);
 
-    // Body (thin stick)
-    g.setColour(Pedal::Outline.withAlpha(0.5f));
-    g.drawLine(x, y - s * 0.12f, x, y + s * 0.2f, 1.8f);
+    // Head (bigger oval on top)
+    g.setColour(body.withAlpha(0.8f));
+    g.fillEllipse(x - s * 0.25f, y - s * 0.42f + bob, s * 0.5f, s * 0.35f);
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    g.drawEllipse(x - s * 0.25f, y - s * 0.42f + bob, s * 0.5f, s * 0.35f, 1.8f);
 
-    // Head
-    float headR = s * 0.09f;
-    g.setColour(Pedal::Cream.withAlpha(0.8f));
-    g.fillEllipse(x - headR, y - s * 0.12f - headR * 2, headR * 2, headR * 2);
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    g.drawEllipse(x - headR, y - s * 0.12f - headR * 2, headR * 2, headR * 2, 1.2f);
+    // 3 eyes
+    float eyeY = y - s * 0.3f + bob;
+    g.setColour(Sky::White);
+    g.fillEllipse(x - s * 0.18f, eyeY, s * 0.1f, s * 0.08f);
+    g.fillEllipse(x - s * 0.04f, eyeY - s * 0.02f, s * 0.1f, s * 0.08f);
+    g.fillEllipse(x + s * 0.1f, eyeY, s * 0.1f, s * 0.08f);
+    g.setColour(Sky::Black);
+    g.fillEllipse(x - s * 0.15f, eyeY + s * 0.01f, 3, 3);
+    g.fillEllipse(x, eyeY - s * 0.01f, 3, 3);
+    g.fillEllipse(x + s * 0.13f, eyeY + s * 0.01f, 3, 3);
 
-    // Wand (arm holding a star wand)
-    float wandTipX = x + s * 0.35f + std::sin(phase) * s * 0.05f;
-    float wandTipY = y - s * 0.2f + std::cos(phase * 0.7f) * s * 0.05f;
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    g.drawLine(x + s * 0.05f, y - s * 0.05f, wandTipX, wandTipY, 1.5f);
+    // Antenna
+    g.setColour(body.darker(0.2f));
+    g.drawLine(x, y - s * 0.42f + bob, x - s * 0.1f, y - s * 0.58f + bob, 1.5f);
+    g.drawLine(x, y - s * 0.42f + bob, x + s * 0.1f, y - s * 0.58f + bob, 1.5f);
+    g.setColour(Sky::CrayonYellow);
+    g.fillEllipse(x - s * 0.1f - 3, y - s * 0.58f + bob - 3, 6, 6);
+    g.fillEllipse(x + s * 0.1f - 3, y - s * 0.58f + bob - 3, 6, 6);
 
-    // Star on wand tip
-    g.setColour(Pedal::Yellow.withAlpha(0.9f));
-    drawStar(g, wandTipX, wandTipY, 5.0f, 1.0f);
-
-    // Sparkle trail behind wand
-    for (int i = 1; i <= 3; ++i)
-    {
-        float trailX = wandTipX - (float)i * 6.0f;
-        float trailY = wandTipY + (float)i * 2.0f;
-        float trailAlpha = 0.6f / (float)i;
-        g.setColour(Pedal::Yellow.withAlpha(trailAlpha));
-        drawStar(g, trailX, trailY, 2.5f, trailAlpha);
-    }
-
-    // Legs (tiny)
-    float legY = y + s * 0.2f;
-    g.setColour(Pedal::Cream.withAlpha(0.6f));
-    g.drawLine(x - 2, legY, x - s * 0.08f + std::sin(phase) * 3, legY + s * 0.12f, 1.5f);
-    g.drawLine(x + 2, legY, x + s * 0.08f - std::sin(phase) * 3, legY + s * 0.12f, 1.5f);
-
-    // Glow aura
-    g.setColour(glowCol.withAlpha(0.08f));
-    g.fillEllipse(x - s * 0.3f, y - s * 0.25f, s * 0.6f, s * 0.5f);
+    // Little legs
+    g.setColour(body.darker(0.1f));
+    float legY = y + s * 0.32f + bob;
+    g.drawLine(x - s * 0.08f, legY - s * 0.05f, x - s * 0.15f, legY + s * 0.1f, 1.8f);
+    g.drawLine(x + s * 0.08f, legY - s * 0.05f, x + s * 0.15f, legY + s * 0.1f, 1.8f);
 }
 
 // ================================================================
-// Unicorn (stick figure horse with horn + rainbow mane)
+// Character: Flower (dancing)
 // ================================================================
-void AetherEditor::drawUnicorn(juce::Graphics& g, float x, float y, float size, float phase)
+void AetherEditor::drawFlower(juce::Graphics& g, float x, float y, float size,
+                               float phase, juce::Colour petals)
 {
     float s = size;
-    float gallop = std::sin(phase * 3.0f) * s * 0.04f;
+    float sway = std::sin(phase * 1.8f) * 4.0f;
 
-    // Body (horizontal oval)
-    g.setColour(Pedal::White.withAlpha(0.7f));
-    g.fillEllipse(x - s * 0.25f, y - s * 0.08f + gallop, s * 0.5f, s * 0.18f);
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    g.drawEllipse(x - s * 0.25f, y - s * 0.08f + gallop, s * 0.5f, s * 0.18f, 1.8f);
+    // Stem
+    g.setColour(Sky::CrayonGreen.withAlpha(0.7f));
+    g.drawLine(x + sway * 0.3f, y + s * 0.15f, x, y + s * 0.55f, 2.5f);
+    // Leaves
+    g.setColour(Sky::CrayonGreen.withAlpha(0.5f));
+    g.fillEllipse(x - s * 0.15f, y + s * 0.3f, s * 0.18f, s * 0.08f);
+    g.fillEllipse(x + s * 0.02f, y + s * 0.38f, s * 0.16f, s * 0.07f);
 
-    // Head + neck
-    float headX = x + s * 0.3f;
-    float headY = y - s * 0.18f + gallop;
-    // Neck line
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    g.drawLine(x + s * 0.15f, y - s * 0.04f + gallop, headX, headY, 2.0f);
-    // Head circle
-    float hr = s * 0.08f;
-    g.setColour(Pedal::White.withAlpha(0.7f));
-    g.fillEllipse(headX - hr, headY - hr, hr * 2, hr * 2);
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    g.drawEllipse(headX - hr, headY - hr, hr * 2, hr * 2, 1.5f);
-
-    // Horn
-    g.setColour(Pedal::Yellow.withAlpha(0.8f));
-    juce::Path horn;
-    horn.startNewSubPath(headX - 2, headY - hr);
-    horn.lineTo(headX + 1, headY - hr - s * 0.15f);
-    horn.lineTo(headX + 4, headY - hr);
-    horn.closeSubPath();
-    g.fillPath(horn);
-    g.setColour(Pedal::Outline.withAlpha(0.3f));
-    g.strokePath(horn, juce::PathStrokeType(1.0f));
-
-    // Rainbow mane (colored lines flowing from neck)
-    juce::Colour maneColors[] = { Pedal::Red, Pedal::Orange, Pedal::Yellow,
-                                   Pedal::Green, Pedal::Blue, Pedal::Purple };
-    for (int i = 0; i < 6; ++i)
+    // Petals (circle of ellipses)
+    int numPetals = 6;
+    float petalR = s * 0.18f;
+    for (int i = 0; i < numPetals; ++i)
     {
-        float mx = x + s * 0.15f + (float)i * 3.0f;
-        float maneWave = std::sin(phase * 2.0f + (float)i * 0.5f) * s * 0.04f;
-        g.setColour(maneColors[i].withAlpha(0.5f));
-        g.drawLine(mx, y - s * 0.06f + gallop, mx - 4.0f + maneWave,
-                   y - s * 0.2f + gallop + maneWave, 2.0f);
+        float a = (float)i / (float)numPetals * juce::MathConstants<float>::twoPi + phase * 0.3f;
+        float px = x + sway * 0.3f + std::cos(a) * petalR;
+        float py = y + std::sin(a) * petalR;
+        g.setColour(petals.withAlpha(0.6f));
+        g.fillEllipse(px - s * 0.09f, py - s * 0.07f, s * 0.18f, s * 0.14f);
     }
 
-    // Legs (4 stick legs with galloping motion)
-    float legBase = y + s * 0.1f + gallop;
-    float legLen = s * 0.18f;
-    float legPhases[] = { 0.0f, 1.5f, 3.0f, 4.5f };
-    float legXs[] = { x - s * 0.18f, x - s * 0.08f, x + s * 0.08f, x + s * 0.18f };
-    g.setColour(Pedal::Outline.withAlpha(0.4f));
-    for (int i = 0; i < 4; ++i)
-    {
-        float kick = std::sin(phase * 3.0f + legPhases[i]) * s * 0.06f;
-        g.drawLine(legXs[i], legBase, legXs[i] + kick, legBase + legLen, 1.8f);
-    }
+    // Center
+    g.setColour(Sky::CrayonYellow);
+    g.fillEllipse(x + sway * 0.3f - s * 0.08f, y - s * 0.08f, s * 0.16f, s * 0.16f);
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    g.drawEllipse(x + sway * 0.3f - s * 0.08f, y - s * 0.08f, s * 0.16f, s * 0.16f, 1.2f);
 
-    // Eye
-    g.setColour(Pedal::Metal);
-    g.fillEllipse(headX + hr * 0.2f, headY - 1.5f, 2.5f, 2.5f);
-
-    // Tail (rainbow, flowing)
-    float tailX = x - s * 0.25f;
-    float tailY = y - s * 0.02f + gallop;
-    for (int i = 0; i < 4; ++i)
-    {
-        float tw = std::sin(phase * 1.5f + (float)i * 0.8f) * s * 0.06f;
-        g.setColour(maneColors[i].withAlpha(0.4f));
-        g.drawLine(tailX, tailY + (float)i * 2.0f, tailX - s * 0.15f + tw,
-                   tailY + (float)i * 3.0f + tw, 2.0f);
-    }
+    // Face in center
+    g.setColour(Sky::Black.withAlpha(0.5f));
+    g.fillEllipse(x + sway * 0.3f - 3, y - 2, 2.5f, 2.5f);
+    g.fillEllipse(x + sway * 0.3f + 2, y - 2, 2.5f, 2.5f);
 }
 
 // ================================================================
-// Star helper
+// Character: Ghost (cute, blushing)
 // ================================================================
-void AetherEditor::drawStar(juce::Graphics& g, float cx, float cy, float size, float twinkle)
+void AetherEditor::drawGhost(juce::Graphics& g, float x, float y, float size, float phase)
+{
+    float s = size;
+    float float_ = std::sin(phase * 2.0f) * 4.0f;
+
+    // Ghost body
+    juce::Path body;
+    body.startNewSubPath(x - s * 0.25f, y + s * 0.3f + float_);
+    body.lineTo(x - s * 0.25f, y - s * 0.1f + float_);
+    body.addCentredArc(x, y - s * 0.1f + float_, s * 0.25f, s * 0.2f,
+                        0.0f, juce::MathConstants<float>::pi, juce::MathConstants<float>::twoPi, false);
+    body.lineTo(x + s * 0.25f, y + s * 0.3f + float_);
+    // Wavy bottom
+    body.lineTo(x + s * 0.15f, y + s * 0.22f + float_);
+    body.lineTo(x + s * 0.05f, y + s * 0.3f + float_);
+    body.lineTo(x - s * 0.05f, y + s * 0.22f + float_);
+    body.lineTo(x - s * 0.15f, y + s * 0.3f + float_);
+    body.closeSubPath();
+
+    g.setColour(Sky::White.withAlpha(0.85f));
+    g.fillPath(body);
+    g.setColour(Sky::Black.withAlpha(0.3f));
+    g.strokePath(body, juce::PathStrokeType(1.8f));
+
+    // Eyes (big and cute)
+    g.setColour(Sky::Black);
+    g.fillEllipse(x - s * 0.1f, y - s * 0.05f + float_, 5, 6);
+    g.fillEllipse(x + s * 0.06f, y - s * 0.05f + float_, 5, 6);
+
+    // Blush spots
+    g.setColour(Sky::CrayonPink.withAlpha(0.4f));
+    g.fillEllipse(x - s * 0.18f, y + s * 0.04f + float_, s * 0.1f, s * 0.06f);
+    g.fillEllipse(x + s * 0.1f, y + s * 0.04f + float_, s * 0.1f, s * 0.06f);
+
+    // Tiny mouth
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    g.fillEllipse(x - 2, y + s * 0.1f + float_, 4, 3);
+}
+
+// ================================================================
+// Character: Boombox (crayon style, like Turnt's doodles)
+// ================================================================
+void AetherEditor::drawBoombox(juce::Graphics& g, float x, float y, float size, float phase)
+{
+    float s = size;
+    float bounce = std::sin(phase * 3.0f) * 2.0f;
+
+    // Body rectangle
+    g.setColour(Sky::CrayonYellow.withAlpha(0.7f));
+    g.fillRoundedRectangle(x - s * 0.35f, y - s * 0.15f + bounce, s * 0.7f, s * 0.35f, 4.0f);
+    g.setColour(Sky::Black.withAlpha(0.5f));
+    g.drawRoundedRectangle(x - s * 0.35f, y - s * 0.15f + bounce, s * 0.7f, s * 0.35f, 4.0f, 2.0f);
+
+    // Speaker circles
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    float spkR = s * 0.08f;
+    g.drawEllipse(x - s * 0.2f - spkR, y - spkR * 0.5f + bounce, spkR * 2, spkR * 2, 1.8f);
+    g.drawEllipse(x + s * 0.12f, y - spkR * 0.5f + bounce, spkR * 2, spkR * 2, 1.8f);
+    // Inner speaker
+    g.fillEllipse(x - s * 0.2f - spkR * 0.3f, y + spkR * 0.2f + bounce, spkR * 0.6f, spkR * 0.6f);
+    g.fillEllipse(x + s * 0.12f + spkR * 0.7f, y + spkR * 0.2f + bounce, spkR * 0.6f, spkR * 0.6f);
+
+    // Tape window in center
+    g.setColour(Sky::CrayonOrange.withAlpha(0.5f));
+    g.fillRect(x - s * 0.06f, y - s * 0.08f + bounce, s * 0.12f, s * 0.08f);
+    g.setColour(Sky::Black.withAlpha(0.3f));
+    g.drawRect(x - s * 0.06f, y - s * 0.08f + bounce, s * 0.12f, s * 0.08f, 1.0f);
+
+    // Handle on top
+    g.setColour(Sky::Black.withAlpha(0.4f));
+    juce::Path handle;
+    handle.addCentredArc(x, y - s * 0.15f + bounce, s * 0.15f, s * 0.08f,
+                          0.0f, juce::MathConstants<float>::pi, juce::MathConstants<float>::twoPi, true);
+    g.strokePath(handle, juce::PathStrokeType(2.0f));
+
+    // Music notes coming out
+    float noteX = x + s * 0.35f + std::sin(phase) * 5;
+    float noteY = y - s * 0.1f + bounce - std::fmod(animTime * 15.0f, 30.0f);
+    g.setColour(Sky::CrayonPurple.withAlpha(0.4f));
+    g.fillEllipse(noteX, noteY, 5, 4);
+    g.drawLine(noteX + 4, noteY + 2, noteX + 4, noteY - 8, 1.5f);
+}
+
+// ================================================================
+// Character: Cassette (retro, crayon style)
+// ================================================================
+void AetherEditor::drawCassette(juce::Graphics& g, float x, float y, float size, float phase)
+{
+    float s = size;
+    float tilt = std::sin(phase * 1.5f) * 0.05f;
+    auto xf = juce::AffineTransform::rotation(tilt, x, y);
+
+    // Body
+    g.setColour(Sky::CrayonTeal.withAlpha(0.6f));
+    juce::Path body;
+    body.addRoundedRectangle(x - s * 0.35f, y - s * 0.18f, s * 0.7f, s * 0.36f, 5.0f);
+    body.applyTransform(xf);
+    g.fillPath(body);
+
+    juce::Path outline;
+    outline.addRoundedRectangle(x - s * 0.35f, y - s * 0.18f, s * 0.7f, s * 0.36f, 5.0f);
+    outline.applyTransform(xf);
+    g.setColour(Sky::Black.withAlpha(0.5f));
+    g.strokePath(outline, juce::PathStrokeType(2.0f));
+
+    // Tape reels (two circles)
+    float reelR = s * 0.07f;
+    float spinAngle = animTime * 3.0f;
+    for (int side = -1; side <= 1; side += 2)
+    {
+        float rx = x + side * s * 0.13f;
+        float ry = y - s * 0.02f;
+        g.setColour(Sky::White.withAlpha(0.8f));
+        g.fillEllipse(rx - reelR, ry - reelR, reelR * 2, reelR * 2);
+        g.setColour(Sky::Black.withAlpha(0.4f));
+        g.drawEllipse(rx - reelR, ry - reelR, reelR * 2, reelR * 2, 1.2f);
+        // Spokes
+        for (int sp = 0; sp < 3; ++sp)
+        {
+            float a = spinAngle + (float)sp * juce::MathConstants<float>::twoPi / 3.0f;
+            g.drawLine(rx, ry, rx + std::cos(a) * reelR * 0.7f, ry + std::sin(a) * reelR * 0.7f, 1.0f);
+        }
+    }
+
+    // Label strip
+    g.setColour(Sky::CrayonYellow.withAlpha(0.5f));
+    g.fillRect(x - s * 0.25f, y - s * 0.16f, s * 0.5f, s * 0.08f);
+    g.setColour(Sky::Black.withAlpha(0.3f));
+    g.setFont(juce::Font(7.0f));
+    g.drawText("AETHER", (int)(x - s * 0.2f), (int)(y - s * 0.16f), (int)(s * 0.4f), (int)(s * 0.08f),
+               juce::Justification::centred);
+}
+
+// ================================================================
+// Star helper (4-point)
+// ================================================================
+void AetherEditor::drawStar4(juce::Graphics& g, float cx, float cy, float size)
 {
     int points = 4;
-    float outerR = size * juce::jlimit(0.3f, 1.0f, twinkle);
+    float outerR = size;
     float innerR = outerR * 0.35f;
     juce::Path star;
     for (int i = 0; i < points * 2; ++i)

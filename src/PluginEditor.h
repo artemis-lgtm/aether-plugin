@@ -19,63 +19,56 @@ private:
     AetherProcessor& processor;
 
     // ---- Custom Look & Feel ----
-    class PedalLookAndFeel : public juce::LookAndFeel_V4
+    class CrayonLookAndFeel : public juce::LookAndFeel_V4
     {
     public:
-        PedalLookAndFeel();
+        CrayonLookAndFeel();
         void drawRotarySlider(juce::Graphics&, int x, int y, int w, int h,
                               float sliderPos, float rotaryStartAngle,
                               float rotaryEndAngle, juce::Slider&) override;
         void drawToggleButton(juce::Graphics&, juce::ToggleButton&,
                               bool highlighted, bool down) override;
     };
-    PedalLookAndFeel pedalLnf;
+    CrayonLookAndFeel crayonLnf;
 
     // ---- Drawing helpers ----
-    void drawPedalBackground(juce::Graphics&);
+    void drawSkyBackground(juce::Graphics&);
+    void drawCloud(juce::Graphics&, float x, float y, float w);
+    void drawSun(juce::Graphics&, float x, float y, float r);
     void drawTitle(juce::Graphics&);
-    void drawSectionBox(juce::Graphics&, juce::Rectangle<int> bounds,
-                        juce::Colour colour, const juce::String& title);
+    void drawSectionLabel(juce::Graphics&, int x, int y, int w, const juce::String& title, juce::Colour col);
+    void drawDoodles(juce::Graphics&);
     void drawSwimmingCharacters(juce::Graphics&);
 
-    // Character drawing
-    void drawPrincess(juce::Graphics&, float x, float y, float size, float phase, juce::Colour dress);
-    void drawFairy(juce::Graphics&, float x, float y, float size, float phase, juce::Colour glow);
-    void drawUnicorn(juce::Graphics&, float x, float y, float size, float phase);
-    void drawStar(juce::Graphics&, float cx, float cy, float size, float alpha);
-    void drawCrayonScribble(juce::Graphics&, float x, float y, float w, float h,
-                            juce::Colour colour, unsigned int seed);
-    juce::Path makeWobblyRect(juce::Rectangle<float> r, float wobble, unsigned int seed);
+    // Doodle characters (drawn procedurally like kid's crayon drawings)
+    void drawBoombox(juce::Graphics&, float x, float y, float size, float phase);
+    void drawCassette(juce::Graphics&, float x, float y, float size, float phase);
+    void drawMushroom(juce::Graphics&, float x, float y, float size, float phase, juce::Colour cap);
+    void drawAlien(juce::Graphics&, float x, float y, float size, float phase, juce::Colour body);
+    void drawFlower(juce::Graphics&, float x, float y, float size, float phase, juce::Colour petals);
+    void drawGhost(juce::Graphics&, float x, float y, float size, float phase);
+    void drawStar4(juce::Graphics&, float cx, float cy, float size);
 
     // ---- Animation ----
     float animTime = 0.0f;
     struct Swimmer {
-        int type;          // 0=princess, 1=fairy, 2=unicorn
-        float startX;      // starting X (offscreen left or right)
+        int type;       // 0=mushroom 1=alien 2=flower 3=ghost 4=boombox 5=cassette
         float y;
-        float speed;       // pixels per frame
+        float speed;
         float size;
         float phaseOffset;
         juce::Colour colour;
         bool goingRight;
     };
     std::vector<Swimmer> swimmers;
-    struct BgStar { float x, y, phase, speed, size; };
-    std::vector<BgStar> bgStars;
     void initSwimmers();
 
     // ---- Controls ----
-    // Swell
     juce::Slider swellSens, swellAttack, swellDepth;
-    // Vinyl (year + detune only)
     juce::Slider vinylYear, vinylDetune;
-    // Psyche
     juce::Slider psycheShimmer, psycheSpace, psycheMod, psycheWarp, psycheMix, psycheNotches, psycheSweep;
-    // LFO
     juce::Slider lfoShape, lfoRate, lfoDepth, lfoSyncRate, lfoPhaseOffset;
-    // Master
     juce::Slider masterMix, masterGain;
-    // Toggles
     juce::ToggleButton swellBypass{"S"}, vinylBypass{"V"}, psycheBypass{"P"}, lfoBypass{"L"};
     juce::ToggleButton lfoSync{"SYNC"};
 
