@@ -202,7 +202,7 @@ void AetherEditor::resized()
 // ================================================================
 void AetherEditor::paint(juce::Graphics& g)
 {
-    // Full background image (doodle art + labels + mounting holes baked in)
+    // Full background image
     if (backgroundImg.isValid())
         g.drawImage(backgroundImg, getLocalBounds().toFloat());
     else
@@ -211,6 +211,12 @@ void AetherEditor::paint(juce::Graphics& g)
     // Animated title
     drawTitle(g);
 
+    // Draw section headers with contrast pill backgrounds
+    drawSectionHeaders(g);
+
+    // Draw knob labels with contrast backgrounds
+    drawKnobLabels(g);
+
     // LFO info readout
     int lShape = static_cast<int>(lfoShape.getValue());
     int lSyncR = static_cast<int>(lfoSyncRate.getValue());
@@ -218,9 +224,92 @@ void AetherEditor::paint(juce::Graphics& g)
     juce::String info = LFOProcessor::shapeName(lShape);
     if (synced)
         info += juce::String(" | ") + LFOProcessor::syncRateName(lSyncR);
-    g.setColour(juce::Colour(0xBBFFFFFF));
-    g.setFont(juce::Font(10.0f));
-    g.drawText(info, 730, 330, 204, 16, juce::Justification::centred);
+
+    // Info readout with pill background
+    auto infoBounds = juce::Rectangle<float>(730.0f, 328.0f, 204.0f, 18.0f);
+    g.setColour(juce::Colour(0x80000000));
+    g.fillRoundedRectangle(infoBounds, 6.0f);
+    g.setColour(juce::Colour(0xEEFFFFFF));
+    g.setFont(juce::Font(10.0f).boldened());
+    g.drawText(info, infoBounds.toNearestInt(), juce::Justification::centred);
+}
+
+void AetherEditor::drawSectionHeaders(juce::Graphics& g)
+{
+    struct SectionHeader { const char* name; int x; int y; int w; juce::Colour color; };
+    SectionHeader headers[] = {
+        { "SWELL",  30,  100, 200, juce::Colour(0xCC2ECC71) },
+        { "VINYL",  240, 100, 136, juce::Colour(0xCCE67E22) },
+        { "PSYCHE", 420, 100, 272, juce::Colour(0xCC9B59B6) },
+        { "LFO",    730, 100, 204, juce::Colour(0xCC3498DB) },
+        { "MASTER",  0,  355, 1020, juce::Colour(0x99333333) },
+    };
+
+    for (auto& h : headers)
+    {
+        auto bounds = juce::Rectangle<float>((float)h.x, (float)h.y, (float)h.w, 22.0f);
+        g.setColour(h.color);
+        g.fillRoundedRectangle(bounds, 8.0f);
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(13.0f).boldened());
+        g.drawText(h.name, bounds.toNearestInt(), juce::Justification::centred);
+    }
+}
+
+void AetherEditor::drawKnobLabels(juce::Graphics& g)
+{
+    int K = 62;
+    int gap = 68;
+
+    struct KnobLabel { const char* name; int cx; int cy; };
+
+    int row1_y = 140;
+    int row2_y = 250;
+    int master_y = 380;
+    int swell_x = 30, vinyl_x = 240, psyche_x = 420, lfo_x = 730;
+    int W = getWidth();
+
+    KnobLabel labels[] = {
+        // Swell
+        { "SENS", swell_x + K/2, row1_y + K + 4 },
+        { "ATK",  swell_x + gap + K/2, row1_y + K + 4 },
+        { "DEPTH", swell_x + gap*2 + K/2, row1_y + K + 4 },
+        // Vinyl
+        { "YEAR", vinyl_x + K/2, row1_y + K + 4 },
+        { "DETUNE", vinyl_x + gap + K/2, row1_y + K + 4 },
+        // Psyche row 1
+        { "SHIMMER", psyche_x + K/2, row1_y + K + 4 },
+        { "SPACE", psyche_x + gap + K/2, row1_y + K + 4 },
+        { "MOD", psyche_x + gap*2 + K/2, row1_y + K + 4 },
+        { "WARP", psyche_x + gap*3 + K/2, row1_y + K + 4 },
+        // Psyche row 2
+        { "MIX", psyche_x + K/2, row2_y + K + 4 },
+        { "NOTCH", psyche_x + gap + K/2, row2_y + K + 4 },
+        { "SWEEP", psyche_x + gap*2 + K/2, row2_y + K + 4 },
+        // LFO row 1
+        { "SHAPE", lfo_x + K/2, row1_y + K + 4 },
+        { "RATE", lfo_x + gap + K/2, row1_y + K + 4 },
+        { "DEPTH", lfo_x + gap*2 + K/2, row1_y + K + 4 },
+        // LFO row 2
+        { "DIV", lfo_x + K/2, row2_y + K + 4 },
+        { "PHASE", lfo_x + gap + K/2, row2_y + K + 4 },
+        // Master
+        { "MIX", W/2 - gap/2, master_y + K + 4 },
+        { "GAIN", W/2 + gap/2, master_y + K + 4 },
+    };
+
+    auto font = juce::Font(10.0f).boldened();
+    g.setFont(font);
+
+    for (auto& l : labels)
+    {
+        float tw = font.getStringWidthFloat(l.name) + 10.0f;
+        auto pill = juce::Rectangle<float>((float)l.cx - tw * 0.5f, (float)l.cy, tw, 14.0f);
+        g.setColour(juce::Colour(0x99000000));
+        g.fillRoundedRectangle(pill, 5.0f);
+        g.setColour(juce::Colours::white);
+        g.drawText(l.name, pill.toNearestInt(), juce::Justification::centred);
+    }
 }
 
 // ================================================================
