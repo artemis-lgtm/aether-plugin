@@ -16,8 +16,9 @@
  *   dust: crackle/noise amount
  *   wear: frequency degradation
  *   detune: slow drunken pitch drift amount (0.0=off, 1.0=heavy wobble)
- *           Simulates turntable motor speed instability -- pitch wanders
- *           slowly and organically, like iZotope Vinyl's detune.
+ *   noise: turntable noise (0.0=silent, 1.0=heavy)
+ *          Blends mechanical rumble (low-freq motor) + electrical hiss/hum
+ *          Based on iZotope Vinyl's Mechanical Noise + Electrical Noise
  */
 class VinylProcessor
 {
@@ -54,10 +55,16 @@ public:
         driftPhase3 = 0.71;
         brownianState = 0.0;
         
+        // Noise generators
+        rumblePhase = 0.0;
+        humPhase = 0.0;
+        hissState = 0.0;
+        
         rng.seed(42);
     }
 
-    void setParameters(float year, float warp, float dust, float wear, float detuneAmount)
+    void setParameters(float year, float warp, float dust, float wear,
+                       float detuneAmount, float noiseAmount)
     {
         // Year maps to low-pass cutoff: modern = 18kHz, 1950s = 4kHz
         float cutoff = juce::jmap(year, 0.0f, 1.0f, 18000.0f, 3500.0f);
@@ -80,10 +87,16 @@ public:
         noiseFloor = juce::jmap(wear, 0.0f, 1.0f, 0.0f, 0.003f);
         
         // Detune: depth of slow pitch drift in samples
-        // At full (1.0), the delay modulation swings +/- ~200 samples at 44.1kHz
-        // which is roughly +/- 30 cents of pitch wobble -- slow and organic
         detuneDepth = juce::jmap(juce::jlimit(0.0f, 1.0f, detuneAmount),
                                   0.0f, 1.0f, 0.0f, 200.0f);
+        
+        // Noise: blend of mechanical rumble + electrical hiss/hum
+        float noiseClamped = juce::jlimit(0.0f, 1.0f, noiseAmount);
+        // Mechanical: low-frequency turntable motor rumble (~30-80 Hz)
+        rumbleAmp = juce::jmap(noiseClamped, 0.0f, 1.0f, 0.0f, 0.015f);
+        // Electrical: 60 Hz hum + broadband hiss
+        humAmp = juce::jmap(noiseClamped, 0.0f, 1.0f, 0.0f, 0.008f);
+        hissAmp = juce::jmap(noiseClamped, 0.0f, 1.0f, 0.0f, 0.006f);
     }
 
     float processSample(float input)
@@ -194,6 +207,37 @@ public:
             processed += noise;
         }
         
+        // === Turntable Noise (mechanical + electrical) ===
+        // Mechanical: low-frequency motor rumble (two slow oscillators for realism)
+        if (rumbleAmp > 0.0f)
+        {
+            rumblePhase += 33.0 / sr;  // ~33 Hz primary rumble
+            if (rumblePhase > 1.0) rumblePhase -= 1.0;
+            double rumble = std::sin(rumblePhase * 2.0 * juce::MathConstants<double>::pi);
+            // Add a sub-harmonic for that deep motor throb
+            double rumbleSub = std::sin(rumblePhase * juce::MathConstants<double>::pi);  // ~16.5 Hz
+            processed += static_cast<float>((rumble * 0.7 + rumbleSub * 0.3) * rumbleAmp);
+        }
+        
+        // Electrical: 60 Hz mains hum + broadband hiss
+        if (humAmp > 0.0f)
+        {
+            humPhase += 60.0 / sr;  // 60 Hz mains hum
+            if (humPhase > 1.0) humPhase -= 1.0;
+            double hum = std::sin(humPhase * 2.0 * juce::MathConstants<double>::pi);
+            // Add 2nd harmonic (120 Hz) for realistic hum character
+            double hum2 = std::sin(humPhase * 4.0 * juce::MathConstants<double>::pi) * 0.5;
+            processed += static_cast<float>((hum + hum2) * humAmp);
+        }
+        
+        if (hissAmp > 0.0f)
+        {
+            // Filtered white noise for electrical hiss (shaped to upper frequencies)
+            float rawNoise = dist(rng) * 2.0f - 1.0f;
+            hissState = hissState * 0.85 + rawNoise * 0.15;  // simple LP → shapes as pink-ish hiss
+            processed += static_cast<float>(hissState) * hissAmp;
+        }
+        
         lastSample = processed;
         return processed;
     }
@@ -233,4 +277,12 @@ private:
     double driftPhase3 = 0.0;
     double brownianState = 0.0;
     double detuneDepth = 0.0;
+    
+    // Noise generators
+    double rumblePhase = 0.0;
+    double humPhase = 0.0;
+    double hissState = 0.0;
+    float rumbleAmp = 0.0f;
+    float humAmp = 0.0f;
+    float hissAmp = 0.0f;
 };

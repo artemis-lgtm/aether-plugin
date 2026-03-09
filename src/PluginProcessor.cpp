@@ -48,8 +48,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("vinylDetune", 1), "Vinyl Detune",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.0f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("vinylNoise", 1), "Vinyl Noise",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.0f));
 
-    // === PSYCHE (Psychedelic) ===
+    // === PSYCHE (Enigma-inspired + Shimmer) ===
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("psycheShimmer", 1), "Shimmer",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.4f));
@@ -69,6 +73,27 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("psycheMix", 1), "Psyche Mix",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("psycheNotches", 1), "Notches",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("psycheSweep", 1), "Sweep",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
+
+    // === LFO (Volume Shaper) ===
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("lfoShape", 1), "LFO Shape",
+        juce::NormalisableRange<float>(0.0f, 7.0f, 1.0f), 0.0f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("lfoRate", 1), "LFO Rate",
+        juce::NormalisableRange<float>(0.1f, 20.0f, 0.01f, 0.4f), 2.0f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("lfoDepth", 1), "LFO Depth",
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.0f));
 
     // === MASTER ===
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
@@ -88,6 +113,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     
     params.push_back(std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID("psycheBypass", 1), "Psyche Bypass", false));
+    
+    params.push_back(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID("lfoBypass", 1), "LFO Bypass", false));
 
     return { params.begin(), params.end() };
 }
@@ -100,6 +128,7 @@ void AetherProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     vinylR.prepare(sampleRate, samplesPerBlock);
     psychL.prepare(sampleRate, samplesPerBlock);
     psychR.prepare(sampleRate, samplesPerBlock);
+    lfo.prepare(sampleRate, samplesPerBlock);
 }
 
 void AetherProcessor::releaseResources() {}
@@ -111,7 +140,6 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     int numSamples = buffer.getNumSamples();
 
-    // Clear unused output channels
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, numSamples);
 
@@ -126,6 +154,7 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     float vDust = *apvts.getRawParameterValue("vinylDust");
     float vWear = *apvts.getRawParameterValue("vinylWear");
     float vDetune = *apvts.getRawParameterValue("vinylDetune");
+    float vNoise = *apvts.getRawParameterValue("vinylNoise");
     bool vinylBypass = *apvts.getRawParameterValue("vinylBypass") > 0.5f;
     
     float pShimmer = *apvts.getRawParameterValue("psycheShimmer");
@@ -133,7 +162,14 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     float pMod = *apvts.getRawParameterValue("psycheMod");
     float pWarp = *apvts.getRawParameterValue("psycheWarp");
     float pMix = *apvts.getRawParameterValue("psycheMix");
+    float pNotches = *apvts.getRawParameterValue("psycheNotches");
+    float pSweep = *apvts.getRawParameterValue("psycheSweep");
     bool psycheBypass = *apvts.getRawParameterValue("psycheBypass") > 0.5f;
+    
+    int lShape = static_cast<int>(*apvts.getRawParameterValue("lfoShape"));
+    float lRate = *apvts.getRawParameterValue("lfoRate");
+    float lDepth = *apvts.getRawParameterValue("lfoDepth");
+    bool lfoBypass = *apvts.getRawParameterValue("lfoBypass") > 0.5f;
     
     float masterMix = *apvts.getRawParameterValue("masterMix");
     float masterGain = *apvts.getRawParameterValue("masterGain");
@@ -142,16 +178,17 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     // Update DSP parameters
     transientL.setParameters(swellSens, swellAttack, swellDepth);
     transientR.setParameters(swellSens, swellAttack, swellDepth);
-    vinylL.setParameters(vYear, vWarp, vDust, vWear, vDetune);
-    vinylR.setParameters(vYear, vWarp, vDust, vWear, vDetune);
-    psychL.setParameters(pShimmer, pSpace, pMod, pWarp, pMix);
-    psychR.setParameters(pShimmer, pSpace, pMod, pWarp, pMix);
+    vinylL.setParameters(vYear, vWarp, vDust, vWear, vDetune, vNoise);
+    vinylR.setParameters(vYear, vWarp, vDust, vWear, vDetune, vNoise);
+    psychL.setParameters(pShimmer, pSpace, pMod, pWarp, pMix, pNotches, pSweep);
+    psychR.setParameters(pShimmer, pSpace, pMod, pWarp, pMix, pNotches, pSweep);
+    lfo.setParameters(lShape, lRate, lDepth);
 
     // Store dry signal for master mix
     juce::AudioBuffer<float> dryBuffer;
     dryBuffer.makeCopyOf(buffer);
 
-    // Process each channel
+    // Process per-channel effects: Swell → Vinyl → Psyche
     for (int channel = 0; channel < juce::jmin(totalNumInputChannels, 2); ++channel)
     {
         float* channelData = buffer.getWritePointer(channel);
@@ -160,7 +197,6 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         auto& vinyl = (channel == 0) ? vinylL : vinylR;
         auto& psych = (channel == 0) ? psychL : psychR;
 
-        // Signal chain: Swell → Vinyl → Psyche
         if (!swellBypass)
             transient.processBlock(channelData, numSamples);
         
@@ -169,6 +205,18 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         
         if (!psycheBypass)
             psych.processBlock(channelData, numSamples);
+    }
+
+    // LFO: apply same gain to both channels (shared phase)
+    if (!lfoBypass && lDepth > 0.001f)
+    {
+        int channels = juce::jmin(totalNumInputChannels, 2);
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float gain = lfo.nextGain();
+            for (int ch = 0; ch < channels; ++ch)
+                buffer.getWritePointer(ch)[i] *= gain;
+        }
     }
 
     // Master mix (dry/wet) and gain

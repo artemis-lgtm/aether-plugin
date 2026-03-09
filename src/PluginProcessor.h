@@ -4,6 +4,7 @@
 #include "dsp/TransientShaper.h"
 #include "dsp/VinylProcessor.h"
 #include "dsp/PsychedelicProcessor.h"
+#include "dsp/LFOProcessor.h"
 
 class AetherProcessor : public juce::AudioProcessor
 {
@@ -42,6 +43,9 @@ private:
     TransientShaper transientL, transientR;
     VinylProcessor vinylL, vinylR;
     PsychedelicProcessor psychL, psychR;
+    
+    // LFO engine (shared across channels -- same gain for L+R)
+    LFOProcessor lfo;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AetherProcessor)
 };

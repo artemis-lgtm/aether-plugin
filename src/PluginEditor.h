@@ -46,12 +46,17 @@ private:
     BypassAttachment swellBypass;
     
     // Vinyl section
-    KnobAttachment vinylYear, vinylWarp, vinylDust, vinylWear, vinylDetune;
+    KnobAttachment vinylYear, vinylWarp, vinylDust, vinylWear, vinylDetune, vinylNoise;
     BypassAttachment vinylBypassBtn;
     
     // Psyche section
     KnobAttachment psycheShimmer, psycheSpace, psycheMod, psycheWarp, psycheMix;
+    KnobAttachment psycheNotches, psycheSweep;
     BypassAttachment psycheBypassBtn;
+    
+    // LFO section
+    KnobAttachment lfoShape, lfoRate, lfoDepth;
+    BypassAttachment lfoBypassBtn;
     
     // Master
     KnobAttachment masterMix, masterGain;
