@@ -269,7 +269,7 @@ void AetherEditor::paint(juce::Graphics& g)
     // Credits
     g.setColour(juce::Colour(0xFF4A3F6B));
     g.setFont(juce::Font(8.0f));
-    g.drawText("v2.2 // artemis", 0, getHeight() - 14, getWidth(), 12, juce::Justification::centredRight);
+    g.drawText("v3.0 // artemis", 0, getHeight() - 14, getWidth(), 12, juce::Justification::centredRight);
 }
 
 void AetherEditor::resized()
