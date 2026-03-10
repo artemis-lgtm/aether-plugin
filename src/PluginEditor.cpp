@@ -338,18 +338,5 @@ void AetherEditor::paint(juce::Graphics& g)
     // Portrait frame — exact match: x=810, y=405, w=175, h=175
     drawNeonGlow(g, { 810.0f, 405.0f, 175.0f, 175.0f }, neonRed, 0.75f);
 
-    // LFO info readout
-    int lShape = static_cast<int>(lfoShape.getValue());
-    int lSyncR = static_cast<int>(lfoSyncRate.getValue());
-    bool synced = lfoSync.getToggleState();
-    juce::String info = LFOProcessor::shapeName(lShape);
-    if (synced)
-        info += juce::String(" | ") + LFOProcessor::syncRateName(lSyncR);
-
-    auto infoBounds = juce::Rectangle<float>(415.0f, 520.0f, 240.0f, 18.0f);
-    g.setColour(juce::Colour(0x80000000));
-    g.fillRoundedRectangle(infoBounds, 6.0f);
-    g.setColour(juce::Colour(0xEEFFFFFF));
-    g.setFont(juce::Font(10.0f).boldened());
-    g.drawText(info, infoBounds.toNearestInt(), juce::Justification::centred);
+    // (LFO info readout removed — clean pedal surface)
 }
