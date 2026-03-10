@@ -193,7 +193,7 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     aLfoBypass     = std::make_unique<ButtonAttachment>(apvts, "lfoBypass",     lfoBypass);
     aLfoSync       = std::make_unique<ButtonAttachment>(apvts, "lfoSync",       lfoSync);
 
-    // No animation timer needed — borders are static in background
+    startTimerHz(30); // 30fps for LFO waveform display animation
 }
 
 AetherEditor::~AetherEditor()
@@ -214,33 +214,8 @@ void AetherEditor::timerCallback()
 {
     neonTime += 1.0f / 30.0f;
 
-    // Faster breathing: ~1.5 second cycle, subtle
-    neonBreath = 0.88f + 0.12f * std::sin(neonTime * 4.2f);
-
-    // Faster, more frequent flicker events
-    flickerCountdown--;
-    if (flickerCountdown <= 0)
-    {
-        std::uniform_int_distribution<int> nextFlicker(5, 40); // 0.17 - 1.3 seconds
-        flickerCountdown = nextFlicker(rng);
-
-        std::uniform_real_distribution<float> flickerType(0.0f, 1.0f);
-        float r = flickerType(rng);
-        if (r < 0.08f)
-            neonFlicker = 0.2f;  // hard stutter (rare)
-        else if (r < 0.25f)
-            neonFlicker = 0.55f; // soft dip
-        else
-            neonFlicker = 1.0f;
-    }
-    else if (neonFlicker < 1.0f)
-    {
-        neonFlicker = juce::jmin(1.0f, neonFlicker + 0.25f); // faster recovery
-    }
-
-    // Repaint neon areas (title + portrait with margin for glow)
-    repaint(210, 0, 600, 110);
-    repaint(790, 385, 230, 235);
+    // Repaint LFO display pocket area
+    repaint(665, 388, 140, 125);
 }
 
 // ================================================================
@@ -319,6 +294,144 @@ void AetherEditor::resized()
 }
 
 // ================================================================
+// LFO Display Pocket — carved recessed window showing waveform
+// ================================================================
+void AetherEditor::drawLfoPocket(juce::Graphics& g)
+{
+    // Pocket position (right of LFO knobs, above portrait)
+    float px = 670.0f, py = 393.0f, pw = 130.0f, ph = 115.0f;
+    float r = 4.0f; // corner radius
+
+    // Carved bevel: dark edge top-left (shadow), light edge bottom-right (highlight)
+    // Outer shadow (makes it look recessed INTO the surface)
+    g.setColour(juce::Colour(0x60000000));
+    g.drawRoundedRectangle(px - 1, py - 1, pw + 2, ph + 2, r + 1, 2.0f);
+
+    // Inner highlight on bottom-right edge
+    g.setColour(juce::Colour(0x30FFFFFF));
+    g.drawLine(px + r, py + ph + 1, px + pw - r, py + ph + 1, 1.0f);
+    g.drawLine(px + pw + 1, py + r, px + pw + 1, py + ph - r, 1.0f);
+
+    // Dark recessed background
+    juce::ColourGradient pocketBg(juce::Colour(0xFF0A0A0A), px, py,
+                                   juce::Colour(0xFF1A1A18), px, py + ph, false);
+    g.setGradientFill(pocketBg);
+    g.fillRoundedRectangle(px, py, pw, ph, r);
+
+    // Inner bevel shadow (top-left inside edge = dark, bottom-right = light)
+    g.setColour(juce::Colour(0x40000000));
+    g.drawLine(px + 1, py + 1, px + pw - 1, py + 1, 1.5f);
+    g.drawLine(px + 1, py + 1, px + 1, py + ph - 1, 1.5f);
+    g.setColour(juce::Colour(0x18FFFFFF));
+    g.drawLine(px + 2, py + ph - 1, px + pw - 1, py + ph - 1, 1.0f);
+    g.drawLine(px + pw - 1, py + 2, px + pw - 1, py + ph - 1, 1.0f);
+
+    // ---- Waveform display area (top part of pocket) ----
+    float waveX = px + 8.0f, waveY = py + 6.0f;
+    float waveW = pw - 16.0f, waveH = 55.0f;
+
+    // Subtle grid lines (oscilloscope style)
+    g.setColour(juce::Colour(0x15FFFFFF));
+    for (int i = 1; i < 4; i++)
+    {
+        float gy = waveY + waveH * (float)i / 4.0f;
+        g.drawHorizontalLine((int)gy, waveX, waveX + waveW);
+    }
+    g.drawVerticalLine((int)(waveX + waveW * 0.5f), waveY, waveY + waveH);
+
+    // Draw the LFO waveform
+    int shape = static_cast<int>(lfoShape.getValue());
+    float phase = neonTime * 1.5f; // slow animation phase
+    juce::Colour waveColor(0xFFFF6030); // warm amber like analog displays
+
+    juce::Path wavePath;
+    int numPoints = (int)waveW;
+    for (int i = 0; i <= numPoints; i++)
+    {
+        float t = (float)i / (float)numPoints;
+        float x = waveX + t * waveW;
+        float tp = std::fmod(t * 2.0f + phase, 1.0f); // two cycles, animated
+
+        float val = 0.0f;
+        switch (shape)
+        {
+            case 0: // Sine
+                val = std::sin(tp * 6.2832f);
+                break;
+            case 1: // Triangle
+                val = 4.0f * std::abs(tp - 0.5f) - 1.0f;
+                break;
+            case 2: // Square
+                val = tp < 0.5f ? 1.0f : -1.0f;
+                break;
+            case 3: // Saw up
+                val = 2.0f * tp - 1.0f;
+                break;
+            case 4: // Saw down
+                val = 1.0f - 2.0f * tp;
+                break;
+            case 5: // Sample & Hold (stepped random)
+            {
+                int step = static_cast<int>(tp * 8.0f);
+                val = std::sin((float)step * 2.7f + 1.3f);
+                break;
+            }
+            default:
+                val = std::sin(tp * 6.2832f);
+                break;
+        }
+
+        float y = waveY + waveH * 0.5f - val * (waveH * 0.4f);
+        if (i == 0)
+            wavePath.startNewSubPath(x, y);
+        else
+            wavePath.lineTo(x, y);
+    }
+
+    // Glow underneath the waveform line
+    g.setColour(waveColor.withAlpha(0.15f));
+    g.strokePath(wavePath, juce::PathStrokeType(6.0f));
+    g.setColour(waveColor.withAlpha(0.3f));
+    g.strokePath(wavePath, juce::PathStrokeType(3.0f));
+    // Bright core line
+    g.setColour(waveColor);
+    g.strokePath(wavePath, juce::PathStrokeType(1.5f));
+
+    // ---- Text display area (bottom part of pocket) ----
+    float textY = waveY + waveH + 6.0f;
+    float textH = ph - waveH - 18.0f;
+
+    // Shape name
+    juce::String shapeName = LFOProcessor::shapeName(shape);
+
+    // Sync rate if synced
+    bool synced = lfoSync.getToggleState();
+    juce::String rateName;
+    if (synced)
+    {
+        int syncR = static_cast<int>(lfoSyncRate.getValue());
+        rateName = LFOProcessor::syncRateName(syncR);
+    }
+    else
+    {
+        float rate = (float)lfoRate.getValue();
+        rateName = juce::String(rate, 1) + " Hz";
+    }
+
+    // Draw shape name
+    g.setColour(waveColor);
+    g.setFont(juce::Font(12.0f).boldened());
+    g.drawText(shapeName, (int)waveX, (int)textY, (int)waveW, (int)(textH * 0.5f),
+               juce::Justification::centred);
+
+    // Draw rate below
+    g.setColour(waveColor.withAlpha(0.7f));
+    g.setFont(juce::Font(10.0f));
+    g.drawText(rateName, (int)waveX, (int)(textY + textH * 0.45f), (int)waveW, (int)(textH * 0.5f),
+               juce::Justification::centred);
+}
+
+// ================================================================
 // Paint
 // ================================================================
 void AetherEditor::paint(juce::Graphics& g)
@@ -331,5 +444,6 @@ void AetherEditor::paint(juce::Graphics& g)
 
     // Neon borders are baked into the background texture — no overlay needed
 
-    // (LFO info readout removed — clean pedal surface)
+    // ---- LFO display pocket (carved into pedal) ----
+    drawLfoPocket(g);
 }

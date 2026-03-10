@@ -49,6 +49,7 @@ private:
 
     void drawNeonGlow(juce::Graphics& g, juce::Rectangle<float> bounds,
                       juce::Colour color, float intensity);
+    void drawLfoPocket(juce::Graphics& g);
 
     // ---- Controls ----
     juce::Slider swellSens, swellAttack, swellDepth;
