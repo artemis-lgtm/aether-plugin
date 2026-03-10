@@ -284,7 +284,7 @@ void AetherEditor::resized()
     swellDepth.setBounds (240 - K/2, 240 - K/2, K, K);
     // Bypass LEDs: 24x24, next to section header tapes
     int ledS = 24;
-    swellBypass.setBounds(255 - ledS/2, 195, ledS, ledS);  // scooted left
+    swellBypass.setBounds(285 - ledS/2, 195, ledS, ledS);  // right a bit more
 
     vinylYear.setBounds  (80  - K/2, 355 - K/2, K, K);
     vinylDetune.setBounds(160 - K/2, 355 - K/2, K, K);
@@ -303,7 +303,7 @@ void AetherEditor::resized()
     psycheMix.setBounds    (psycheStart + psycheGap*4  - K/2, 240 - K/2, K, K);
     psycheNotches.setBounds(psycheStart + psycheGap*5  - K/2, 240 - K/2, K, K);
     psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
-    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 - 10, 195, ledS, ledS);  // scooted left
+    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 + 20, 195, ledS, ledS);  // right a bit more
 
     lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
     lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
