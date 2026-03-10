@@ -73,11 +73,9 @@ void AetherEditor::FilmstripLookAndFeel::drawToggleButton(
 AetherEditor::AetherEditor(AetherProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
-    // Background (baked: wood texture + duct tape labels + neon title + portrait)
     backgroundImg = juce::ImageFileFormat::loadFrom(
         BinaryData::background_png, BinaryData::background_pngSize);
 
-    // Per-section colored knob filmstrips
     auto loadStrip = [](FilmstripLookAndFeel& lnf, const char* data, int size) {
         juce::Image img = juce::ImageFileFormat::loadFrom(data, size);
         lnf.setKnobStrip(img, 128);
@@ -91,7 +89,6 @@ AetherEditor::AetherEditor(AetherProcessor& p)
 
     setSize(1020, 620);
 
-    // Setup knobs with section-specific look and feel
     auto setupKnob = [&](juce::Slider& s, FilmstripLookAndFeel& lnf) {
         s.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
@@ -147,11 +144,12 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     aPsycheBypass  = std::make_unique<ButtonAttachment>(apvts, "psycheBypass",  psycheBypass);
     aLfoBypass     = std::make_unique<ButtonAttachment>(apvts, "lfoBypass",     lfoBypass);
     aLfoSync       = std::make_unique<ButtonAttachment>(apvts, "lfoSync",       lfoSync);
+
+    startTimerHz(30); // 30fps for smooth neon animation
 }
 
 AetherEditor::~AetherEditor()
 {
-    // Clear per-slider LAF before destruction
     for (auto* s : { &swellSens, &swellAttack, &swellDepth,
                      &vinylYear, &vinylDetune,
                      &psycheShimmer, &psycheSpace, &psycheMod, &psycheWarp,
@@ -162,32 +160,95 @@ AetherEditor::~AetherEditor()
 }
 
 // ================================================================
-// Layout — two-column design matching baked background
+// Timer — drives neon flicker animation
 // ================================================================
-// UV coordinates from render: x/1020, y/620
-// Knob size reduced to avoid covering duct tape labels
+void AetherEditor::timerCallback()
+{
+    neonTime += 1.0f / 30.0f;
+
+    // Slow breathing: 0.7 - 1.0 over ~3 second cycle
+    neonBreath = 0.85f + 0.15f * std::sin(neonTime * 2.1f);
+
+    // Random flicker events (like a real neon tube)
+    flickerCountdown--;
+    if (flickerCountdown <= 0)
+    {
+        std::uniform_int_distribution<int> nextFlicker(15, 90); // 0.5 - 3 seconds between events
+        flickerCountdown = nextFlicker(rng);
+
+        std::uniform_real_distribution<float> flickerType(0.0f, 1.0f);
+        float r = flickerType(rng);
+        if (r < 0.15f)
+            neonFlicker = 0.3f;  // hard stutter (rare)
+        else if (r < 0.35f)
+            neonFlicker = 0.6f;  // soft dip
+        else
+            neonFlicker = 1.0f;  // normal
+    }
+    else if (neonFlicker < 1.0f)
+    {
+        // Recover from flicker over a few frames
+        neonFlicker = juce::jmin(1.0f, neonFlicker + 0.15f);
+    }
+
+    // Only repaint the neon areas (title top + portrait bottom-right)
+    repaint(0, 0, getWidth(), 65);                  // title region
+    repaint(getWidth() - 230, getHeight() - 220, 230, 220); // portrait region
+}
+
+// ================================================================
+// Neon glow overlay — draws animated glow rectangles
+// ================================================================
+void AetherEditor::drawNeonGlow(juce::Graphics& g, juce::Rectangle<float> bounds,
+                                 juce::Colour color, float intensity)
+{
+    float alpha = intensity * neonBreath * neonFlicker;
+    alpha = juce::jlimit(0.0f, 1.0f, alpha);
+
+    // Outer soft glow (large, faint)
+    for (int i = 3; i >= 1; i--)
+    {
+        float expand = (float)i * 6.0f;
+        float a = alpha * 0.12f * (float)(4 - i);
+        g.setColour(color.withAlpha(a));
+        g.drawRoundedRectangle(bounds.expanded(expand), 4.0f, 3.0f);
+    }
+
+    // Inner bright glow
+    g.setColour(color.withAlpha(alpha * 0.5f));
+    g.drawRoundedRectangle(bounds.expanded(2.0f), 3.0f, 2.5f);
+
+    // Core neon line
+    g.setColour(color.withAlpha(alpha * 0.8f));
+    g.drawRoundedRectangle(bounds, 2.0f, 2.0f);
+
+    // Hot white center (the brightest part of a neon tube)
+    juce::Colour hotCenter = color.interpolatedWith(juce::Colours::white, 0.5f);
+    g.setColour(hotCenter.withAlpha(alpha * 0.3f));
+    g.drawRoundedRectangle(bounds.reduced(1.0f), 2.0f, 1.0f);
+}
+
+// ================================================================
+// Layout
+// ================================================================
 void AetherEditor::resized()
 {
-    int K = 56; // knob size (smaller to not cover labels)
+    int K = 56;
 
-    // LEFT COLUMN: Swell / Vinyl / Master stacked
-    // Swell row (3 knobs)
+    // LEFT COLUMN
     swellSens.setBounds  (80  - K/2, 240 - K/2, K, K);
     swellAttack.setBounds(160 - K/2, 240 - K/2, K, K);
     swellDepth.setBounds (240 - K/2, 240 - K/2, K, K);
     swellBypass.setBounds(40, 188, 36, 22);
 
-    // Vinyl row (2 knobs)
     vinylYear.setBounds  (80  - K/2, 355 - K/2, K, K);
     vinylDetune.setBounds(160 - K/2, 355 - K/2, K, K);
     vinylBypass.setBounds(40, 303, 36, 22);
 
-    // Master row (2 knobs)
     masterMix.setBounds (80  - K/2, 465 - K/2, K, K);
     masterGain.setBounds(160 - K/2, 465 - K/2, K, K);
 
-    // RIGHT COLUMN: Psyche / LFO stacked
-    // Psyche — 7 knobs in one row
+    // RIGHT COLUMN
     int psycheGap = 70;
     int psycheStart = 420;
     psycheShimmer.setBounds(psycheStart               - K/2, 240 - K/2, K, K);
@@ -199,7 +260,6 @@ void AetherEditor::resized()
     psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
     psycheBypass.setBounds(385, 188, 36, 22);
 
-    // LFO — row 1 (3 knobs), row 2 (2 knobs + sync)
     lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
     lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
     lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
@@ -210,14 +270,36 @@ void AetherEditor::resized()
 }
 
 // ================================================================
-// Paint — background only (all labels baked into texture)
+// Paint
 // ================================================================
 void AetherEditor::paint(juce::Graphics& g)
 {
+    // Static background (wood desk + pedal with baked labels)
     if (backgroundImg.isValid())
         g.drawImage(backgroundImg, getLocalBounds().toFloat());
     else
         g.fillAll(juce::Colour(0xFF3B2F2F));
+
+    // ---- Animated neon glow overlays ----
+    juce::Colour neonRed(0xFFFF2828);
+
+    // Title box "Austin's Secret Sauce" — approximate baked position
+    // (centered, near top of pedal face)
+    {
+        float titleW = 350.0f;
+        float titleH = 50.0f;
+        float titleX = (float)getWidth() * 0.5f - titleW * 0.5f;
+        float titleY = 8.0f;
+        drawNeonGlow(g, { titleX, titleY, titleW, titleH }, neonRed, 0.9f);
+    }
+
+    // Portrait frame — bottom right of pedal face
+    {
+        float pw = 175.0f, ph = 175.0f;
+        float px = (float)getWidth() - pw - 35.0f;
+        float py = (float)getHeight() - ph - 40.0f;
+        drawNeonGlow(g, { px, py, pw, ph }, neonRed, 0.75f);
+    }
 
     // LFO info readout
     int lShape = static_cast<int>(lfoShape.getValue());

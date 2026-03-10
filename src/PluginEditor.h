@@ -2,8 +2,10 @@
 #include "PluginProcessor.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <random>
 
-class AetherEditor : public juce::AudioProcessorEditor
+class AetherEditor : public juce::AudioProcessorEditor,
+                     private juce::Timer
 {
 public:
     AetherEditor(AetherProcessor&);
@@ -13,6 +15,8 @@ public:
     void resized() override;
 
 private:
+    void timerCallback() override;
+
     AetherProcessor& processor;
 
     // ---- Per-section filmstrip Look & Feel ----
@@ -35,6 +39,16 @@ private:
     FilmstripLookAndFeel swellLnf, vinylLnf, masterLnf, psycheLnf, lfoLnf;
 
     juce::Image backgroundImg;
+
+    // ---- Neon animation state ----
+    float neonTime = 0.0f;
+    float neonFlicker = 1.0f;       // current flicker multiplier
+    float neonBreath = 1.0f;        // slow breathing
+    int flickerCountdown = 0;       // frames until next flicker event
+    std::mt19937 rng { std::random_device{}() };
+
+    void drawNeonGlow(juce::Graphics& g, juce::Rectangle<float> bounds,
+                      juce::Colour color, float intensity);
 
     // ---- Controls ----
     juce::Slider swellSens, swellAttack, swellDepth;
