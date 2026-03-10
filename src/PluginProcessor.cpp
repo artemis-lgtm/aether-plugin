@@ -22,7 +22,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("swellAttack", 1), "Swell Attack",
-        juce::NormalisableRange<float>(10.0f, 800.0f, 1.0f, 0.5f), 150.0f));
+        juce::NormalisableRange<float>(10.0f, 2000.0f, 1.0f, 0.4f), 300.0f));
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID("swellDepth", 1), "Swell Depth",
