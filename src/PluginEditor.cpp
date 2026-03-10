@@ -313,7 +313,7 @@ void AetherEditor::resized()
     // Sync inside LFO pocket (pocket is 670,393 -> 800,508)
     lfoSync.setBounds(680, 490, 16, 16);
     lfoUpbeat.setBounds(760, 490, 16, 16);
-    lfoBypass.setBounds(658, 358, ledS, ledS);  // up and right a little
+    lfoBypass.setBounds(666, 358, ledS, ledS);  // nudged right a tiny bit more
 }
 
 // ================================================================
