@@ -47,13 +47,55 @@ void AetherEditor::FilmstripLookAndFeel::drawToggleButton(
 
     if (isBypass)
     {
-        g.setColour(on ? juce::Colour(0xBBFF4444) : juce::Colour(0xBB44DD44));
-        g.fillRoundedRectangle(bounds, 8.0f);
-        g.setColour(juce::Colour(0x60000000));
-        g.drawRoundedRectangle(bounds, 8.0f, 1.5f);
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(10.0f).boldened());
-        g.drawText(on ? "OFF" : "ON", bounds, juce::Justification::centred);
+        // Analog LED built into the pedal board
+        // Note: bypass param is inverted — "on" = bypassed (OFF), "off" = active (ON)
+        bool active = !on;
+        float ledR = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.42f;
+        auto center = bounds.getCentre();
+        auto ledRect = juce::Rectangle<float>(center.x - ledR, center.y - ledR, ledR * 2, ledR * 2);
+
+        // Chrome bezel ring
+        g.setColour(juce::Colour(0xFF888888));
+        g.fillEllipse(ledRect.expanded(3.0f));
+        g.setColour(juce::Colour(0xFFAAAAAA));
+        g.drawEllipse(ledRect.expanded(3.0f), 1.5f);
+        g.setColour(juce::Colour(0xFF555555));
+        g.drawEllipse(ledRect.expanded(1.5f), 1.0f);
+
+        if (active)
+        {
+            // Outer glow (ambient light spill)
+            g.setColour(juce::Colour(0x25FF1010));
+            g.fillEllipse(ledRect.expanded(10.0f));
+            g.setColour(juce::Colour(0x40FF2020));
+            g.fillEllipse(ledRect.expanded(6.0f));
+
+            // Bright red LED
+            juce::ColourGradient grad(juce::Colour(0xFFFF4040), center.x - ledR * 0.3f, center.y - ledR * 0.3f,
+                                       juce::Colour(0xFFBB0000), center.x + ledR, center.y + ledR, true);
+            g.setGradientFill(grad);
+            g.fillEllipse(ledRect);
+
+            // Hot spot (specular highlight)
+            g.setColour(juce::Colour(0x80FFFFFF));
+            g.fillEllipse(center.x - ledR * 0.35f, center.y - ledR * 0.4f, ledR * 0.5f, ledR * 0.4f);
+        }
+        else
+        {
+            // Dark LED (off) — deep red, barely visible
+            juce::ColourGradient grad(juce::Colour(0xFF3A1515), center.x, center.y - ledR * 0.3f,
+                                       juce::Colour(0xFF1A0808), center.x, center.y + ledR, true);
+            g.setGradientFill(grad);
+            g.fillEllipse(ledRect);
+
+            // Subtle glass reflection even when off
+            g.setColour(juce::Colour(0x18FFFFFF));
+            g.fillEllipse(center.x - ledR * 0.3f, center.y - ledR * 0.35f, ledR * 0.4f, ledR * 0.3f);
+        }
+
+        // Glass dome edge
+        g.setColour(juce::Colour(0x30000000));
+        g.drawEllipse(ledRect, 0.8f);
     }
     else
     {
@@ -244,11 +286,13 @@ void AetherEditor::resized()
     swellSens.setBounds  (80  - K/2, 240 - K/2, K, K);
     swellAttack.setBounds(160 - K/2, 240 - K/2, K, K);
     swellDepth.setBounds (240 - K/2, 240 - K/2, K, K);
-    swellBypass.setBounds(40, 188, 36, 22);
+    // Bypass LEDs: 24x24, next to section header tapes
+    int ledS = 24;
+    swellBypass.setBounds(270 - ledS/2, 195, ledS, ledS);  // right of SWELL header
 
     vinylYear.setBounds  (80  - K/2, 355 - K/2, K, K);
     vinylDetune.setBounds(160 - K/2, 355 - K/2, K, K);
-    vinylBypass.setBounds(40, 303, 36, 22);
+    vinylBypass.setBounds(190 - ledS/2, 310, ledS, ledS);  // right of VINYL header
 
     masterMix.setBounds (80  - K/2, 465 - K/2, K, K);
     masterGain.setBounds(160 - K/2, 465 - K/2, K, K);
@@ -263,15 +307,15 @@ void AetherEditor::resized()
     psycheMix.setBounds    (psycheStart + psycheGap*4  - K/2, 240 - K/2, K, K);
     psycheNotches.setBounds(psycheStart + psycheGap*5  - K/2, 240 - K/2, K, K);
     psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
-    psycheBypass.setBounds(385, 188, 36, 22);
+    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 + 8, 195, ledS, ledS);  // right of last psyche knob area
 
     lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
     lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
     lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
     lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
     lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
-    lfoSync.setBounds(620, 470, 18, 18);  // small LED next to phase knob
-    lfoBypass.setBounds(415, 361, 36, 22);
+    lfoSync.setBounds(620, 470, 18, 18);
+    lfoBypass.setBounds(648, 368, ledS, ledS);  // right of LFO area
 }
 
 // ================================================================
