@@ -18,8 +18,8 @@ juce_add_plugin(Aether
     PLUGIN_MANUFACTURER_CODE AeAu
     PLUGIN_CODE Athr
     FORMATS AU VST3 Standalone
-    PRODUCT_NAME "Aether"
-    BUNDLE_ID "com.aetheraudio.aether"
+    PRODUCT_NAME "Austins Secret Sauce"
+    BUNDLE_ID "com.aetheraudio.austinssecretauce"
     AU_MAIN_TYPE "kAudioUnitType_Effect"
     VST3_CATEGORIES "Fx"
 )
