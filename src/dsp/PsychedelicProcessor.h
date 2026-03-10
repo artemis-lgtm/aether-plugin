@@ -74,13 +74,13 @@ public:
 
         // === Sweep LFO rate ===
         float modClamped = juce::jlimit(0.0f, 1.0f, modulation);
-        sweepRate = juce::jmap(modClamped, 0.0f, 1.0f, 0.03f, 3.0f);
+        sweepRate = juce::jmap(modClamped, 0.0f, 1.0f, 0.03f, 8.0f);
 
         // === Sweep frequency range ===
         float sweepClamped = juce::jlimit(0.0f, 1.0f, sweepRange);
         // Log-spaced sweep range
-        sweepMinFreq = juce::jmap(sweepClamped, 0.0f, 1.0f, 250.0f, 60.0f);
-        sweepMaxFreq = juce::jmap(sweepClamped, 0.0f, 1.0f, 2000.0f, 14000.0f);
+        sweepMinFreq = juce::jmap(sweepClamped, 0.0f, 1.0f, 200.0f, 40.0f);
+        sweepMaxFreq = juce::jmap(sweepClamped, 0.0f, 1.0f, 3000.0f, 18000.0f);
 
         // === Feedback loop ===
         // Space -> delay time (5ms to 300ms)
@@ -89,8 +89,9 @@ public:
         feedbackDelay = juce::jlimit(1, MAX_DELAY - 1, feedbackDelay);
 
         // Warp -> feedback decay/gain (how much recirculates)
+        // Pushed to 0.93 for more aggressive resonant buildup
         float warpClamped = juce::jlimit(0.0f, 1.0f, warp);
-        feedbackGain = juce::jmap(warpClamped, 0.0f, 1.0f, 0.0f, 0.85f);
+        feedbackGain = juce::jmap(warpClamped, 0.0f, 1.0f, 0.0f, 0.93f);
 
         // Shimmer -> feedback filter brightness (LP cutoff in feedback path)
         float shimmerClamped = juce::jlimit(0.0f, 1.0f, shimmer);
@@ -109,9 +110,8 @@ public:
         // === Sum input with feedback return ===
         float summed = input + feedbackSample;
 
-        // Soft-clip the summed signal to prevent feedback blowup
-        if (summed > 2.0f) summed = 2.0f;
-        if (summed < -2.0f) summed = -2.0f;
+        // Warm tanh saturation -- lets the signal get hotter before taming it
+        summed = std::tanh(summed * 0.7f) * (1.0f / 0.7f);
 
         float processed = summed;
 
@@ -141,9 +141,9 @@ public:
                 double notchFreq = std::exp(centerLogFreq + offset);
                 notchFreq = juce::jlimit(20.0, sr * 0.45, notchFreq);
 
-                // Wide Q for audible spectral effect (Enigma uses deep notches)
-                // Vary Q slightly per notch for complexity
-                double Q = 0.6 + (n % 3) * 0.3; // 0.6, 0.9, 1.2, 0.6, 0.9, 1.2
+                // Sharper Q for more dramatic spectral carving
+                // Higher Q = narrower notch = more pronounced sweep effect
+                double Q = 1.5 + (n % 3) * 0.8; // 1.5, 2.3, 3.1, 1.5, 2.3, 3.1
 
                 double w0 = PI2 * notchFreq / sr;
                 double sinW0 = std::sin(w0);
