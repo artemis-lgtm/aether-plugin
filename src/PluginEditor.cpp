@@ -303,7 +303,7 @@ void AetherEditor::resized()
     psycheMix.setBounds    (psycheStart + psycheGap*4  - K/2, 240 - K/2, K, K);
     psycheNotches.setBounds(psycheStart + psycheGap*5  - K/2, 240 - K/2, K, K);
     psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
-    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 + 8, 195, ledS, ledS);  // right of last psyche knob
+    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 + 8, 195, ledS, ledS);  // right of last psyche knob area
 
     lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
     lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
