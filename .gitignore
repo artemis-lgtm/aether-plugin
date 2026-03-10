@@ -2,3 +2,9 @@ build/
 .DS_Store
 *.component
 *.vst3
+# Debug/iteration renders
+resources/debug_*.png
+resources/metal_test.png
+resources/pedal_v3*.png
+resources/secret_sauce_v*.png
+resources/face_debug.png
