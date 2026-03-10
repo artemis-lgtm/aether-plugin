@@ -310,8 +310,9 @@ void AetherEditor::resized()
     lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
     lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
     lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
-    lfoSync.setBounds(620, 470, 18, 18);
-    lfoUpbeat.setBounds(650, 470, 18, 18);
+    // Sync inside LFO pocket (pocket is 670,393 -> 800,508)
+    lfoSync.setBounds(680, 490, 16, 16);
+    lfoUpbeat.setBounds(760, 490, 16, 16);
     lfoBypass.setBounds(648, 368, ledS, ledS);  // right of LFO area
 }
 
@@ -451,6 +452,12 @@ void AetherEditor::drawLfoPocket(juce::Graphics& g)
     g.setFont(juce::Font(10.0f));
     g.drawText(rateName, (int)waveX, (int)(textY + textH * 0.45f), (int)waveW, (int)(textH * 0.5f),
                juce::Justification::centred);
+
+    // SYNC and UPBEAT labels inside pocket (next to their buttons)
+    g.setColour(waveColor.withAlpha(0.5f));
+    g.setFont(juce::Font(8.0f));
+    g.drawText("SYN", 673, 491, 24, 14, juce::Justification::centredLeft);
+    g.drawText("UP", 748, 491, 24, 14, juce::Justification::centredLeft);
 }
 
 // ================================================================
