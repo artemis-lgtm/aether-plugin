@@ -123,6 +123,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout AetherProcessor::createParam
     // === LFO Sync Toggle ===
     params.push_back(std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID("lfoSync", 1), "LFO Sync", false));
+    
+    params.push_back(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID("lfoUpbeat", 1), "LFO Upbeat", false));
 
     return { params.begin(), params.end() };
 }
@@ -176,6 +179,8 @@ void AetherProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     bool  lSync     = *apvts.getRawParameterValue("lfoSync") > 0.5f;
     int   lSyncRate = static_cast<int>(*apvts.getRawParameterValue("lfoSyncRate"));
     float lPhaseOff = *apvts.getRawParameterValue("lfoPhaseOffset");
+    bool  lUpbeat   = *apvts.getRawParameterValue("lfoUpbeat") > 0.5f;
+    if (lUpbeat) lPhaseOff = std::fmod(lPhaseOff + 0.5f, 1.0f);
     
     float masterMixVal = *apvts.getRawParameterValue("masterMix");
     float masterGain   = *apvts.getRawParameterValue("masterGain");

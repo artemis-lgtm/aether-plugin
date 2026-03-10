@@ -179,7 +179,7 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     setupKnob(masterMix, lnfMasterMix);
     setupKnob(masterGain, lnfMasterGain);
 
-    for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync })
+    for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync, &lfoUpbeat })
     {
         b->setLookAndFeel(&bypassLnf);  // shared LnF for bypass LED drawing
         addAndMakeVisible(*b);
@@ -210,6 +210,7 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     aPsycheBypass  = std::make_unique<ButtonAttachment>(apvts, "psycheBypass",  psycheBypass);
     aLfoBypass     = std::make_unique<ButtonAttachment>(apvts, "lfoBypass",     lfoBypass);
     aLfoSync       = std::make_unique<ButtonAttachment>(apvts, "lfoSync",       lfoSync);
+    aLfoUpbeat     = std::make_unique<ButtonAttachment>(apvts, "lfoUpbeat",     lfoUpbeat);
 
     startTimerHz(30); // 30fps for LFO waveform display animation
 }
@@ -223,7 +224,7 @@ AetherEditor::~AetherEditor()
                      &lfoShape, &lfoRate, &lfoDepth, &lfoSyncRate, &lfoPhaseOffset,
                      &masterMix, &masterGain })
         s->setLookAndFeel(nullptr);
-    for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync })
+    for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync, &lfoUpbeat })
         b->setLookAndFeel(nullptr);
 }
 
@@ -310,6 +311,7 @@ void AetherEditor::resized()
     lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
     lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
     lfoSync.setBounds(680, 470, 18, 18);
+    lfoUpbeat.setBounds(730, 470, 18, 18);
     lfoBypass.setBounds(700, 348, ledS, ledS);  // shifted up + right A LOT
 }
 
