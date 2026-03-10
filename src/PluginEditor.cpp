@@ -235,7 +235,7 @@ void AetherEditor::timerCallback()
     neonTime += 1.0f / 30.0f;
 
     // Repaint LFO display pocket area
-    repaint(665, 388, 140, 125);
+    repaint(625, 300, 120, 105);
 }
 
 // ================================================================
@@ -275,42 +275,45 @@ void AetherEditor::drawNeonGlow(juce::Graphics& g, juce::Rectangle<float> bounds
 // ================================================================
 void AetherEditor::resized()
 {
-    int K = 56;
+    // Positions mapped from UV space to 3D render coordinates
+    // Face region: origin (70,54), scale (0.852, 0.650)
+    // K scaled from 56 to 47 to match render
+    int K = 47;
+    int ledS = 20;
 
-    // LEFT COLUMN
-    swellSens.setBounds  (80  - K/2, 240 - K/2, K, K);
-    swellAttack.setBounds(160 - K/2, 240 - K/2, K, K);
-    swellDepth.setBounds (240 - K/2, 240 - K/2, K, K);
-    // Bypass LEDs: 24x24, next to section header tapes
-    int ledS = 24;
-    swellBypass.setBounds(270 - ledS/2, 195, ledS, ledS);  // right of SWELL header
+    // LEFT COLUMN: Swell
+    swellSens.setBounds  (138 - K/2, 210 - K/2, K, K);
+    swellAttack.setBounds(206 - K/2, 210 - K/2, K, K);
+    swellDepth.setBounds (274 - K/2, 210 - K/2, K, K);
+    swellBypass.setBounds(300, 173, ledS, ledS);
 
-    vinylYear.setBounds  (80  - K/2, 355 - K/2, K, K);
-    vinylDetune.setBounds(160 - K/2, 355 - K/2, K, K);
-    vinylBypass.setBounds(190 - ledS/2, 310, ledS, ledS);  // right of VINYL header
+    // Vinyl
+    vinylYear.setBounds  (138 - K/2, 284 - K/2, K, K);
+    vinylDetune.setBounds(206 - K/2, 284 - K/2, K, K);
+    vinylBypass.setBounds(232, 258, ledS, ledS);
 
-    masterMix.setBounds (80  - K/2, 465 - K/2, K, K);
-    masterGain.setBounds(160 - K/2, 465 - K/2, K, K);
+    // Master
+    masterMix.setBounds (138 - K/2, 356 - K/2, K, K);
+    masterGain.setBounds(206 - K/2, 356 - K/2, K, K);
 
-    // RIGHT COLUMN
-    int psycheGap = 70;
-    int psycheStart = 420;
-    psycheShimmer.setBounds(psycheStart               - K/2, 240 - K/2, K, K);
-    psycheSpace.setBounds  (psycheStart + psycheGap    - K/2, 240 - K/2, K, K);
-    psycheMod.setBounds    (psycheStart + psycheGap*2  - K/2, 240 - K/2, K, K);
-    psycheWarp.setBounds   (psycheStart + psycheGap*3  - K/2, 240 - K/2, K, K);
-    psycheMix.setBounds    (psycheStart + psycheGap*4  - K/2, 240 - K/2, K, K);
-    psycheNotches.setBounds(psycheStart + psycheGap*5  - K/2, 240 - K/2, K, K);
-    psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
-    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 + 8, 195, ledS, ledS);  // right of last psyche knob area
+    // RIGHT COLUMN: Psyche — 7 knobs
+    psycheShimmer.setBounds(427 - K/2, 210 - K/2, K, K);
+    psycheSpace.setBounds  (487 - K/2, 210 - K/2, K, K);
+    psycheMod.setBounds    (547 - K/2, 210 - K/2, K, K);
+    psycheWarp.setBounds   (606 - K/2, 210 - K/2, K, K);
+    psycheMix.setBounds    (666 - K/2, 210 - K/2, K, K);
+    psycheNotches.setBounds(726 - K/2, 210 - K/2, K, K);
+    psycheSweep.setBounds  (785 - K/2, 210 - K/2, K, K);
+    psycheBypass.setBounds(810, 173, ledS, ledS);
 
-    lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
-    lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
-    lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
-    lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
-    lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
-    lfoSync.setBounds(695, 468, 22, 22);  // bigger LED, next to SYNC tape label
-    lfoBypass.setBounds(648, 368, ledS, ledS);  // right of LFO area
+    // LFO
+    lfoShape.setBounds(457 - K/2, 320 - K/2, K, K);
+    lfoRate.setBounds (525 - K/2, 320 - K/2, K, K);
+    lfoDepth.setBounds(593 - K/2, 320 - K/2, K, K);
+    lfoSyncRate.setBounds    (457 - K/2, 369 - K/2, K, K);
+    lfoPhaseOffset.setBounds (525 - K/2, 369 - K/2, K, K);
+    lfoSync.setBounds(575, 363, 18, 18);
+    lfoBypass.setBounds(620, 300, ledS, ledS);
 }
 
 // ================================================================
@@ -318,8 +321,8 @@ void AetherEditor::resized()
 // ================================================================
 void AetherEditor::drawLfoPocket(juce::Graphics& g)
 {
-    // Pocket position (right of LFO knobs, above portrait)
-    float px = 670.0f, py = 393.0f, pw = 130.0f, ph = 115.0f;
+    // Pocket position (mapped to render coordinates, right of LFO knobs)
+    float px = 630.0f, py = 305.0f, pw = 110.0f, ph = 95.0f;
     float r = 4.0f; // corner radius
 
     // Carved bevel: dark edge top-left (shadow), light edge bottom-right (highlight)
