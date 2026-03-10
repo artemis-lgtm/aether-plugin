@@ -3,8 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
-class AetherEditor : public juce::AudioProcessorEditor,
-                     private juce::Timer
+class AetherEditor : public juce::AudioProcessorEditor
 {
 public:
     AetherEditor(AetherProcessor&);
@@ -12,12 +11,11 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
-    void timerCallback() override;
 
 private:
     AetherProcessor& processor;
 
-    // ---- Filmstrip knob Look & Feel ----
+    // ---- Per-section filmstrip Look & Feel ----
     class FilmstripLookAndFeel : public juce::LookAndFeel_V4
     {
     public:
@@ -33,17 +31,10 @@ private:
         int frames = 128;
         int frameW = 128;
     };
-    FilmstripLookAndFeel filmstripLnf;
+
+    FilmstripLookAndFeel swellLnf, vinylLnf, masterLnf, psycheLnf, lfoLnf;
 
     juce::Image backgroundImg;
-
-    // Title animation
-    float animTime = 0.0f;
-    void drawTitle(juce::Graphics&);
-    void drawSectionHeaders(juce::Graphics&);
-    void drawKnobLabels(juce::Graphics&);
-    void drawSectionLabel(juce::Graphics&, const juce::String& text, int x, int y, int width);
-    void drawKnobLabel(juce::Graphics&, const juce::String& text, int knobX, int y);
 
     // ---- Controls ----
     juce::Slider swellSens, swellAttack, swellDepth;

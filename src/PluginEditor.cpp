@@ -47,7 +47,6 @@ void AetherEditor::FilmstripLookAndFeel::drawToggleButton(
 
     if (isBypass)
     {
-        // Bypass: red when off (bypassed), green when on (active)
         g.setColour(on ? juce::Colour(0xBBFF4444) : juce::Colour(0xBB44DD44));
         g.fillRoundedRectangle(bounds, 8.0f);
         g.setColour(juce::Colour(0x60000000));
@@ -58,8 +57,7 @@ void AetherEditor::FilmstripLookAndFeel::drawToggleButton(
     }
     else
     {
-        // Sync toggle
-        g.setColour(on ? juce::Colour(0xBB00CEC9) : juce::Colour(0xBB888888));
+        g.setColour(on ? juce::Colour(0xBBFF2828) : juce::Colour(0xBB888888));
         g.fillRoundedRectangle(bounds, 8.0f);
         g.setColour(juce::Colour(0x60000000));
         g.drawRoundedRectangle(bounds, 8.0f, 1.5f);
@@ -75,29 +73,51 @@ void AetherEditor::FilmstripLookAndFeel::drawToggleButton(
 AetherEditor::AetherEditor(AetherProcessor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
+    // Background (baked: wood texture + duct tape labels + neon title + portrait)
     backgroundImg = juce::ImageFileFormat::loadFrom(
         BinaryData::background_png, BinaryData::background_pngSize);
 
-    juce::Image knobImg = juce::ImageFileFormat::loadFrom(
-        BinaryData::knobstrip_png, BinaryData::knobstrip_pngSize);
+    // Per-section colored knob filmstrips
+    auto loadStrip = [](FilmstripLookAndFeel& lnf, const char* data, int size) {
+        juce::Image img = juce::ImageFileFormat::loadFrom(data, size);
+        lnf.setKnobStrip(img, 128);
+    };
 
-    filmstripLnf.setKnobStrip(knobImg, 128);
-    setLookAndFeel(&filmstripLnf);
+    loadStrip(swellLnf,  BinaryData::knobswell_png,  BinaryData::knobswell_pngSize);
+    loadStrip(vinylLnf,  BinaryData::knobvinyl_png,   BinaryData::knobvinyl_pngSize);
+    loadStrip(masterLnf, BinaryData::knobmaster_png,  BinaryData::knobmaster_pngSize);
+    loadStrip(psycheLnf, BinaryData::knobpsyche_png,  BinaryData::knobpsyche_pngSize);
+    loadStrip(lfoLnf,    BinaryData::knoblfo_png,     BinaryData::knoblfo_pngSize);
+
     setSize(1020, 620);
 
-    auto setupKnob = [&](juce::Slider& s) {
+    // Setup knobs with section-specific look and feel
+    auto setupKnob = [&](juce::Slider& s, FilmstripLookAndFeel& lnf) {
         s.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        s.setLookAndFeel(&lnf);
         addAndMakeVisible(s);
     };
 
-    setupKnob(swellSens); setupKnob(swellAttack); setupKnob(swellDepth);
-    setupKnob(vinylYear); setupKnob(vinylDetune);
-    setupKnob(psycheShimmer); setupKnob(psycheSpace); setupKnob(psycheMod);
-    setupKnob(psycheWarp); setupKnob(psycheMix); setupKnob(psycheNotches); setupKnob(psycheSweep);
-    setupKnob(lfoShape); setupKnob(lfoRate); setupKnob(lfoDepth);
-    setupKnob(lfoSyncRate); setupKnob(lfoPhaseOffset);
-    setupKnob(masterMix); setupKnob(masterGain);
+    setupKnob(swellSens, swellLnf);
+    setupKnob(swellAttack, swellLnf);
+    setupKnob(swellDepth, swellLnf);
+    setupKnob(vinylYear, vinylLnf);
+    setupKnob(vinylDetune, vinylLnf);
+    setupKnob(psycheShimmer, psycheLnf);
+    setupKnob(psycheSpace, psycheLnf);
+    setupKnob(psycheMod, psycheLnf);
+    setupKnob(psycheWarp, psycheLnf);
+    setupKnob(psycheMix, psycheLnf);
+    setupKnob(psycheNotches, psycheLnf);
+    setupKnob(psycheSweep, psycheLnf);
+    setupKnob(lfoShape, lfoLnf);
+    setupKnob(lfoRate, lfoLnf);
+    setupKnob(lfoDepth, lfoLnf);
+    setupKnob(lfoSyncRate, lfoLnf);
+    setupKnob(lfoPhaseOffset, lfoLnf);
+    setupKnob(masterMix, masterLnf);
+    setupKnob(masterGain, masterLnf);
 
     for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync })
         addAndMakeVisible(*b);
@@ -127,95 +147,77 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     aPsycheBypass  = std::make_unique<ButtonAttachment>(apvts, "psycheBypass",  psycheBypass);
     aLfoBypass     = std::make_unique<ButtonAttachment>(apvts, "lfoBypass",     lfoBypass);
     aLfoSync       = std::make_unique<ButtonAttachment>(apvts, "lfoSync",       lfoSync);
-
-    startTimerHz(24);
 }
 
 AetherEditor::~AetherEditor()
 {
-    setLookAndFeel(nullptr);
-}
-
-void AetherEditor::timerCallback()
-{
-    animTime += 1.0f / 24.0f;
-    repaint(0, 0, getWidth(), 90); // Only repaint title area
+    // Clear per-slider LAF before destruction
+    for (auto* s : { &swellSens, &swellAttack, &swellDepth,
+                     &vinylYear, &vinylDetune,
+                     &psycheShimmer, &psycheSpace, &psycheMod, &psycheWarp,
+                     &psycheMix, &psycheNotches, &psycheSweep,
+                     &lfoShape, &lfoRate, &lfoDepth, &lfoSyncRate, &lfoPhaseOffset,
+                     &masterMix, &masterGain })
+        s->setLookAndFeel(nullptr);
 }
 
 // ================================================================
-// Layout — knobs positioned directly on the pedal surface
+// Layout — two-column design matching baked background
 // ================================================================
+// UV coordinates from render: x/1020, y/620
+// Knob size reduced to avoid covering duct tape labels
 void AetherEditor::resized()
 {
-    int K = 62; // knob size
-    int gap = 68; // horizontal gap
+    int K = 56; // knob size (smaller to not cover labels)
 
-    int row1_y = 140;
-    int row2_y = 250;
-    int master_y = 380;
+    // LEFT COLUMN: Swell / Vinyl / Master stacked
+    // Swell row (3 knobs)
+    swellSens.setBounds  (80  - K/2, 240 - K/2, K, K);
+    swellAttack.setBounds(160 - K/2, 240 - K/2, K, K);
+    swellDepth.setBounds (240 - K/2, 240 - K/2, K, K);
+    swellBypass.setBounds(40, 188, 36, 22);
 
-    int swell_x = 30;
-    int vinyl_x = 240;
-    int psyche_x = 420;
-    int lfo_x = 730;
+    // Vinyl row (2 knobs)
+    vinylYear.setBounds  (80  - K/2, 355 - K/2, K, K);
+    vinylDetune.setBounds(160 - K/2, 355 - K/2, K, K);
+    vinylBypass.setBounds(40, 303, 36, 22);
 
-    // Swell
-    swellSens.setBounds(swell_x, row1_y, K, K);
-    swellAttack.setBounds(swell_x + gap, row1_y, K, K);
-    swellDepth.setBounds(swell_x + gap * 2, row1_y, K, K);
-    swellBypass.setBounds(swell_x - 5, row1_y - 30, 36, 22);
+    // Master row (2 knobs)
+    masterMix.setBounds (80  - K/2, 465 - K/2, K, K);
+    masterGain.setBounds(160 - K/2, 465 - K/2, K, K);
 
-    // Vinyl
-    vinylYear.setBounds(vinyl_x, row1_y, K, K);
-    vinylDetune.setBounds(vinyl_x + gap, row1_y, K, K);
-    vinylBypass.setBounds(vinyl_x - 5, row1_y - 30, 36, 22);
+    // RIGHT COLUMN: Psyche / LFO stacked
+    // Psyche — 7 knobs in one row
+    int psycheGap = 70;
+    int psycheStart = 420;
+    psycheShimmer.setBounds(psycheStart               - K/2, 240 - K/2, K, K);
+    psycheSpace.setBounds  (psycheStart + psycheGap    - K/2, 240 - K/2, K, K);
+    psycheMod.setBounds    (psycheStart + psycheGap*2  - K/2, 240 - K/2, K, K);
+    psycheWarp.setBounds   (psycheStart + psycheGap*3  - K/2, 240 - K/2, K, K);
+    psycheMix.setBounds    (psycheStart + psycheGap*4  - K/2, 240 - K/2, K, K);
+    psycheNotches.setBounds(psycheStart + psycheGap*5  - K/2, 240 - K/2, K, K);
+    psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
+    psycheBypass.setBounds(385, 188, 36, 22);
 
-    // Psyche row 1
-    psycheShimmer.setBounds(psyche_x, row1_y, K, K);
-    psycheSpace.setBounds(psyche_x + gap, row1_y, K, K);
-    psycheMod.setBounds(psyche_x + gap * 2, row1_y, K, K);
-    psycheWarp.setBounds(psyche_x + gap * 3, row1_y, K, K);
-    // Psyche row 2
-    psycheMix.setBounds(psyche_x, row2_y, K, K);
-    psycheNotches.setBounds(psyche_x + gap, row2_y, K, K);
-    psycheSweep.setBounds(psyche_x + gap * 2, row2_y, K, K);
-    psycheBypass.setBounds(psyche_x - 5, row1_y - 30, 36, 22);
-
-    // LFO row 1
-    lfoShape.setBounds(lfo_x, row1_y, K, K);
-    lfoRate.setBounds(lfo_x + gap, row1_y, K, K);
-    lfoDepth.setBounds(lfo_x + gap * 2, row1_y, K, K);
-    // LFO row 2
-    lfoSyncRate.setBounds(lfo_x, row2_y, K, K);
-    lfoPhaseOffset.setBounds(lfo_x + gap, row2_y, K, K);
-    lfoSync.setBounds(lfo_x + gap * 2, row2_y + 14, 52, 26);
-    lfoBypass.setBounds(lfo_x - 5, row1_y - 30, 36, 22);
-
-    // Master
-    int W = getWidth();
-    masterMix.setBounds(W / 2 - gap / 2 - K / 2, master_y, K, K);
-    masterGain.setBounds(W / 2 + gap / 2 - K / 2, master_y, K, K);
+    // LFO — row 1 (3 knobs), row 2 (2 knobs + sync)
+    lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
+    lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
+    lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
+    lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
+    lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
+    lfoSync.setBounds(700, 445, 55, 24);
+    lfoBypass.setBounds(415, 361, 36, 22);
 }
 
 // ================================================================
-// Paint
+// Paint — background only (all labels baked into texture)
 // ================================================================
 void AetherEditor::paint(juce::Graphics& g)
 {
-    // Full background image
     if (backgroundImg.isValid())
         g.drawImage(backgroundImg, getLocalBounds().toFloat());
     else
-        g.fillAll(juce::Colour(0xFF5DADE2));
-
-    // Animated title
-    drawTitle(g);
-
-    // Draw section headers with contrast pill backgrounds
-    drawSectionHeaders(g);
-
-    // Draw knob labels with contrast backgrounds
-    drawKnobLabels(g);
+        g.fillAll(juce::Colour(0xFF3B2F2F));
 
     // LFO info readout
     int lShape = static_cast<int>(lfoShape.getValue());
@@ -225,170 +227,10 @@ void AetherEditor::paint(juce::Graphics& g)
     if (synced)
         info += juce::String(" | ") + LFOProcessor::syncRateName(lSyncR);
 
-    // Info readout with pill background
-    auto infoBounds = juce::Rectangle<float>(730.0f, 328.0f, 204.0f, 18.0f);
+    auto infoBounds = juce::Rectangle<float>(415.0f, 520.0f, 240.0f, 18.0f);
     g.setColour(juce::Colour(0x80000000));
     g.fillRoundedRectangle(infoBounds, 6.0f);
     g.setColour(juce::Colour(0xEEFFFFFF));
     g.setFont(juce::Font(10.0f).boldened());
     g.drawText(info, infoBounds.toNearestInt(), juce::Justification::centred);
-}
-
-void AetherEditor::drawSectionHeaders(juce::Graphics& g)
-{
-    struct SectionHeader { const char* name; int x; int y; int w; juce::Colour color; };
-    SectionHeader headers[] = {
-        { "SWELL",  30,  100, 200, juce::Colour(0xCC2ECC71) },
-        { "VINYL",  240, 100, 136, juce::Colour(0xCCE67E22) },
-        { "PSYCHE", 420, 100, 272, juce::Colour(0xCC9B59B6) },
-        { "LFO",    730, 100, 204, juce::Colour(0xCC3498DB) },
-        { "MASTER",  0,  355, 1020, juce::Colour(0x99333333) },
-    };
-
-    for (auto& h : headers)
-    {
-        auto bounds = juce::Rectangle<float>((float)h.x, (float)h.y, (float)h.w, 22.0f);
-        g.setColour(h.color);
-        g.fillRoundedRectangle(bounds, 8.0f);
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(13.0f).boldened());
-        g.drawText(h.name, bounds.toNearestInt(), juce::Justification::centred);
-    }
-}
-
-void AetherEditor::drawKnobLabels(juce::Graphics& g)
-{
-    int K = 62;
-    int gap = 68;
-
-    struct KnobLabel { const char* name; int cx; int cy; };
-
-    int row1_y = 140;
-    int row2_y = 250;
-    int master_y = 380;
-    int swell_x = 30, vinyl_x = 240, psyche_x = 420, lfo_x = 730;
-    int W = getWidth();
-
-    KnobLabel labels[] = {
-        // Swell
-        { "SENS", swell_x + K/2, row1_y + K + 4 },
-        { "ATK",  swell_x + gap + K/2, row1_y + K + 4 },
-        { "DEPTH", swell_x + gap*2 + K/2, row1_y + K + 4 },
-        // Vinyl
-        { "YEAR", vinyl_x + K/2, row1_y + K + 4 },
-        { "DETUNE", vinyl_x + gap + K/2, row1_y + K + 4 },
-        // Psyche row 1
-        { "SHIMMER", psyche_x + K/2, row1_y + K + 4 },
-        { "SPACE", psyche_x + gap + K/2, row1_y + K + 4 },
-        { "MOD", psyche_x + gap*2 + K/2, row1_y + K + 4 },
-        { "WARP", psyche_x + gap*3 + K/2, row1_y + K + 4 },
-        // Psyche row 2
-        { "MIX", psyche_x + K/2, row2_y + K + 4 },
-        { "NOTCH", psyche_x + gap + K/2, row2_y + K + 4 },
-        { "SWEEP", psyche_x + gap*2 + K/2, row2_y + K + 4 },
-        // LFO row 1
-        { "SHAPE", lfo_x + K/2, row1_y + K + 4 },
-        { "RATE", lfo_x + gap + K/2, row1_y + K + 4 },
-        { "DEPTH", lfo_x + gap*2 + K/2, row1_y + K + 4 },
-        // LFO row 2
-        { "DIV", lfo_x + K/2, row2_y + K + 4 },
-        { "PHASE", lfo_x + gap + K/2, row2_y + K + 4 },
-        // Master
-        { "MIX", W/2 - gap/2, master_y + K + 4 },
-        { "GAIN", W/2 + gap/2, master_y + K + 4 },
-    };
-
-    auto font = juce::Font(10.0f).boldened();
-    g.setFont(font);
-
-    for (auto& l : labels)
-    {
-        float tw = font.getStringWidthFloat(l.name) + 10.0f;
-        auto pill = juce::Rectangle<float>((float)l.cx - tw * 0.5f, (float)l.cy, tw, 14.0f);
-        g.setColour(juce::Colour(0x99000000));
-        g.fillRoundedRectangle(pill, 5.0f);
-        g.setColour(juce::Colours::white);
-        g.drawText(l.name, pill.toNearestInt(), juce::Justification::centred);
-    }
-}
-
-// ================================================================
-// Title — rainbow bouncing AETHER
-// ================================================================
-void AetherEditor::drawTitle(juce::Graphics& g)
-{
-    juce::String title = "AETHER";
-    auto font = juce::Font(46.0f).boldened();
-    g.setFont(font);
-
-    float titleW = font.getStringWidthFloat(title);
-    float startX = ((float)getWidth() - titleW) * 0.5f;
-    float baseY = 30.0f;
-
-    juce::Colour rainbow[] = {
-        juce::Colour(0xFFFF6B6B), juce::Colour(0xFFFF8C42), juce::Colour(0xFFFFE066),
-        juce::Colour(0xFF6BCB77), juce::Colour(0xFF00CEC9), juce::Colour(0xFFBB6BD9)
-    };
-
-    for (int i = 0; i < title.length(); ++i)
-    {
-        juce::String ch = title.substring(i, i + 1);
-        float cw = font.getStringWidthFloat(ch);
-        float bounce = std::sin(animTime * 2.5f + i * 0.8f) * 5.0f;
-        float y = baseY + bounce;
-
-        // Black outline for readability on busy background
-        g.setColour(juce::Colour(0xCC000000));
-        for (int dx = -2; dx <= 2; dx++)
-            for (int dy = -2; dy <= 2; dy++)
-                if (dx != 0 || dy != 0)
-                    g.drawText(ch, (int)(startX + dx), (int)(y + dy), (int)cw + 2, 55,
-                               juce::Justification::left);
-
-        // Rainbow fill
-        g.setColour(rainbow[i % 6]);
-        g.drawText(ch, (int)startX, (int)y, (int)cw + 2, 55,
-                   juce::Justification::left);
-
-        startX += cw;
-    }
-}
-
-// ================================================================
-// Section label (header with pill background)
-// ================================================================
-void AetherEditor::drawSectionLabel(juce::Graphics& g, const juce::String& text,
-                                     int x, int y, int width)
-{
-    auto font = juce::Font(13.0f).boldened();
-    g.setFont(font);
-
-    juce::Rectangle<float> pill((float)x, (float)y, (float)width, 18.0f);
-    g.setColour(juce::Colour(0x90000000));
-    g.fillRoundedRectangle(pill, 5.0f);
-    g.setColour(juce::Colour(0x40FFFFFF));
-    g.drawRoundedRectangle(pill, 5.0f, 0.5f);
-
-    g.setColour(juce::Colours::white);
-    g.drawText(text, pill.toNearestInt(), juce::Justification::centred);
-}
-
-// ================================================================
-// Knob label (small text below knob with subtle background)
-// ================================================================
-void AetherEditor::drawKnobLabel(juce::Graphics& g, const juce::String& text,
-                                  int knobX, int y)
-{
-    auto font = juce::Font(10.0f).boldened();
-    g.setFont(font);
-
-    float textW = font.getStringWidthFloat(text) + 8.0f;
-    float cx = (float)knobX + 31.0f; // center of 62px knob
-    juce::Rectangle<float> pill(cx - textW / 2.0f, (float)y, textW, 14.0f);
-
-    g.setColour(juce::Colour(0x70000000));
-    g.fillRoundedRectangle(pill, 3.0f);
-
-    g.setColour(juce::Colours::white);
-    g.drawText(text, pill.toNearestInt(), juce::Justification::centred);
 }
