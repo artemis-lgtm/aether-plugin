@@ -235,8 +235,9 @@ void AetherEditor::timerCallback()
 {
     neonTime += 1.0f / 30.0f;
 
-    // Repaint LFO display pocket area
+    // Repaint LFO display pocket area + CRT portrait
     repaint(665, 388, 140, 125);
+    repaint(getWidth() - 215, getHeight() - 220, 185, 185);  // CRT portrait region
 }
 
 // ================================================================
@@ -472,6 +473,49 @@ void AetherEditor::paint(juce::Graphics& g)
         g.fillAll(juce::Colour(0xFF3B2F2F));
 
     // Neon borders are baked into the background texture — no overlay needed
+
+    // ---- CRT flicker on portrait area ----
+    {
+        // Portrait position matches face art: px = W - 175 - 35, py = H - 175 - 40
+        float px = getWidth() - 175.0f - 35.0f;
+        float py = getHeight() - 175.0f - 40.0f;
+        auto crtRect = juce::Rectangle<float>(px, py, 175.0f, 175.0f);
+
+        // Subtle brightness flicker (CRT power supply hum)
+        float flicker = 0.92f + 0.08f * std::sin(neonTime * 8.0f);  // 8Hz subtle pulse
+        // Random micro-glitch (rare)
+        if (((int)(neonTime * 30) % 97) == 0)
+            flicker *= 0.85f;
+
+        // Animated scanline overlay (scrolls slowly)
+        float scanOffset = std::fmod(neonTime * 15.0f, 5.0f);  // slow scroll
+        g.saveState();
+        g.reduceClipRegion(crtRect.toNearestInt());
+        
+        // Draw scrolling scanline bands
+        g.setColour(juce::Colour(0x00000000).withAlpha(0.06f * (1.0f - flicker + 0.08f)));
+        for (float y = py + scanOffset; y < py + 175.0f; y += 5.0f)
+        {
+            g.fillRect(px, y, 175.0f, 1.5f);
+        }
+        
+        // Overall brightness modulation
+        if (flicker < 0.95f)
+        {
+            g.setColour(juce::Colour(0x00000000).withAlpha(1.0f - flicker));
+            g.fillRect(crtRect);
+        }
+        
+        // Occasional horizontal sync glitch (very rare)
+        if (((int)(neonTime * 30) % 211) == 0)
+        {
+            int glitchY = (int)(py + std::fmod(neonTime * 100, 175.0f));
+            g.setColour(juce::Colour(0x20FFFFFF));
+            g.fillRect((int)px, glitchY, 175, 2);
+        }
+        
+        g.restoreState();
+    }
 
     // ---- LFO display pocket (carved into pedal) ----
     drawLfoPocket(g);
