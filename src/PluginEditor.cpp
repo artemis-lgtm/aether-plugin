@@ -284,11 +284,11 @@ void AetherEditor::resized()
     swellDepth.setBounds (240 - K/2, 240 - K/2, K, K);
     // Bypass LEDs: 24x24, next to section header tapes
     int ledS = 24;
-    swellBypass.setBounds(270 - ledS/2, 195, ledS, ledS);  // right of SWELL header
+    swellBypass.setBounds(255 - ledS/2, 195, ledS, ledS);  // scooted left
 
     vinylYear.setBounds  (80  - K/2, 355 - K/2, K, K);
     vinylDetune.setBounds(160 - K/2, 355 - K/2, K, K);
-    vinylBypass.setBounds(190 - ledS/2, 310, ledS, ledS);  // right of VINYL header
+    vinylBypass.setBounds(230 - ledS/2, 310, ledS, ledS);  // moved right a lot
 
     masterMix.setBounds (80  - K/2, 465 - K/2, K, K);
     masterGain.setBounds(160 - K/2, 465 - K/2, K, K);
@@ -303,7 +303,7 @@ void AetherEditor::resized()
     psycheMix.setBounds    (psycheStart + psycheGap*4  - K/2, 240 - K/2, K, K);
     psycheNotches.setBounds(psycheStart + psycheGap*5  - K/2, 240 - K/2, K, K);
     psycheSweep.setBounds  (psycheStart + psycheGap*6  - K/2, 240 - K/2, K, K);
-    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 + 8, 195, ledS, ledS);  // right of last psyche knob area
+    psycheBypass.setBounds(psycheStart + psycheGap*6 + K/2 - 10, 195, ledS, ledS);  // scooted left
 
     lfoShape.setBounds(455 - K/2, 410 - K/2, K, K);
     lfoRate.setBounds (535 - K/2, 410 - K/2, K, K);
@@ -313,7 +313,7 @@ void AetherEditor::resized()
     // Sync inside LFO pocket (pocket is 670,393 -> 800,508)
     lfoSync.setBounds(680, 490, 16, 16);
     lfoUpbeat.setBounds(760, 490, 16, 16);
-    lfoBypass.setBounds(648, 368, ledS, ledS);  // right of LFO area
+    lfoBypass.setBounds(658, 358, ledS, ledS);  // up and right a little
 }
 
 // ================================================================
