@@ -129,11 +129,26 @@ AetherEditor::AetherEditor(AetherProcessor& p)
         lnf.setKnobStrip(img, 128);
     };
 
-    loadStrip(swellLnf,  BinaryData::knobswell_png,  BinaryData::knobswell_pngSize);
-    loadStrip(vinylLnf,  BinaryData::knobvinyl_png,   BinaryData::knobvinyl_pngSize);
-    loadStrip(masterLnf, BinaryData::knobmaster_png,  BinaryData::knobmaster_pngSize);
-    loadStrip(psycheLnf, BinaryData::knobpsyche_png,  BinaryData::knobpsyche_pngSize);
-    loadStrip(lfoLnf,    BinaryData::knoblfo_png,     BinaryData::knoblfo_pngSize);
+    // Load per-knob random-color filmstrips
+    loadStrip(lnfSwellSens,      BinaryData::knobswellsens_png,      BinaryData::knobswellsens_pngSize);
+    loadStrip(lnfSwellAttack,    BinaryData::knobswellattack_png,    BinaryData::knobswellattack_pngSize);
+    loadStrip(lnfSwellDepth,     BinaryData::knobswelldepth_png,     BinaryData::knobswelldepth_pngSize);
+    loadStrip(lnfVinylYear,      BinaryData::knobvinylyear_png,      BinaryData::knobvinylyear_pngSize);
+    loadStrip(lnfVinylDetune,    BinaryData::knobvinyldetune_png,    BinaryData::knobvinyldetune_pngSize);
+    loadStrip(lnfPsycheShimmer,  BinaryData::knobpsycheshimmer_png,  BinaryData::knobpsycheshimmer_pngSize);
+    loadStrip(lnfPsycheSpace,    BinaryData::knobpsychespace_png,    BinaryData::knobpsychespace_pngSize);
+    loadStrip(lnfPsycheMod,      BinaryData::knobpsychemod_png,      BinaryData::knobpsychemod_pngSize);
+    loadStrip(lnfPsycheWarp,     BinaryData::knobpsychewarp_png,     BinaryData::knobpsychewarp_pngSize);
+    loadStrip(lnfPsycheMix,      BinaryData::knobpsychemix_png,      BinaryData::knobpsychemix_pngSize);
+    loadStrip(lnfPsycheNotches,  BinaryData::knobpsychenotches_png,  BinaryData::knobpsychenotches_pngSize);
+    loadStrip(lnfPsycheSweep,    BinaryData::knobpsychesweep_png,    BinaryData::knobpsychesweep_pngSize);
+    loadStrip(lnfLfoShape,       BinaryData::knoblfoshape_png,       BinaryData::knoblfoshape_pngSize);
+    loadStrip(lnfLfoRate,        BinaryData::knoblforate_png,        BinaryData::knoblforate_pngSize);
+    loadStrip(lnfLfoDepth,       BinaryData::knoblfodepth_png,       BinaryData::knoblfodepth_pngSize);
+    loadStrip(lnfLfoSyncRate,    BinaryData::knoblfosyncrate_png,    BinaryData::knoblfosyncrate_pngSize);
+    loadStrip(lnfLfoPhase,       BinaryData::knoblfophase_png,       BinaryData::knoblfophase_pngSize);
+    loadStrip(lnfMasterMix,      BinaryData::knobmastermix_png,      BinaryData::knobmastermix_pngSize);
+    loadStrip(lnfMasterGain,     BinaryData::knobmastergain_png,     BinaryData::knobmastergain_pngSize);
 
     setSize(1020, 620);
 
@@ -144,28 +159,31 @@ AetherEditor::AetherEditor(AetherProcessor& p)
         addAndMakeVisible(s);
     };
 
-    setupKnob(swellSens, swellLnf);
-    setupKnob(swellAttack, swellLnf);
-    setupKnob(swellDepth, swellLnf);
-    setupKnob(vinylYear, vinylLnf);
-    setupKnob(vinylDetune, vinylLnf);
-    setupKnob(psycheShimmer, psycheLnf);
-    setupKnob(psycheSpace, psycheLnf);
-    setupKnob(psycheMod, psycheLnf);
-    setupKnob(psycheWarp, psycheLnf);
-    setupKnob(psycheMix, psycheLnf);
-    setupKnob(psycheNotches, psycheLnf);
-    setupKnob(psycheSweep, psycheLnf);
-    setupKnob(lfoShape, lfoLnf);
-    setupKnob(lfoRate, lfoLnf);
-    setupKnob(lfoDepth, lfoLnf);
-    setupKnob(lfoSyncRate, lfoLnf);
-    setupKnob(lfoPhaseOffset, lfoLnf);
-    setupKnob(masterMix, masterLnf);
-    setupKnob(masterGain, masterLnf);
+    setupKnob(swellSens, lnfSwellSens);
+    setupKnob(swellAttack, lnfSwellAttack);
+    setupKnob(swellDepth, lnfSwellDepth);
+    setupKnob(vinylYear, lnfVinylYear);
+    setupKnob(vinylDetune, lnfVinylDetune);
+    setupKnob(psycheShimmer, lnfPsycheShimmer);
+    setupKnob(psycheSpace, lnfPsycheSpace);
+    setupKnob(psycheMod, lnfPsycheMod);
+    setupKnob(psycheWarp, lnfPsycheWarp);
+    setupKnob(psycheMix, lnfPsycheMix);
+    setupKnob(psycheNotches, lnfPsycheNotches);
+    setupKnob(psycheSweep, lnfPsycheSweep);
+    setupKnob(lfoShape, lnfLfoShape);
+    setupKnob(lfoRate, lnfLfoRate);
+    setupKnob(lfoDepth, lnfLfoDepth);
+    setupKnob(lfoSyncRate, lnfLfoSyncRate);
+    setupKnob(lfoPhaseOffset, lnfLfoPhase);
+    setupKnob(masterMix, lnfMasterMix);
+    setupKnob(masterGain, lnfMasterGain);
 
     for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync })
+    {
+        b->setLookAndFeel(&bypassLnf);  // shared LnF for bypass LED drawing
         addAndMakeVisible(*b);
+    }
 
     auto& apvts = processor.apvts;
     aSwellSens     = std::make_unique<SliderAttachment>(apvts, "swellSens",     swellSens);
@@ -205,6 +223,8 @@ AetherEditor::~AetherEditor()
                      &lfoShape, &lfoRate, &lfoDepth, &lfoSyncRate, &lfoPhaseOffset,
                      &masterMix, &masterGain })
         s->setLookAndFeel(nullptr);
+    for (auto* b : { &swellBypass, &vinylBypass, &psycheBypass, &lfoBypass, &lfoSync })
+        b->setLookAndFeel(nullptr);
 }
 
 // ================================================================

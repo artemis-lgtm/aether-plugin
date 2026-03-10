@@ -24,15 +24,29 @@ juce_add_plugin(Aether
     VST3_CATEGORIES "Fx"
 )
 
-# Binary resources (background + per-section knob filmstrips)
+# Binary resources (background + per-knob filmstrips with random colors)
 juce_add_binary_data(AetherData
     SOURCES
         resources/background.png
-        resources/knob-swell.png
-        resources/knob-vinyl.png
-        resources/knob-master.png
-        resources/knob-psyche.png
-        resources/knob-lfo.png
+        resources/knob-swellsens.png
+        resources/knob-swellattack.png
+        resources/knob-swelldepth.png
+        resources/knob-vinylyear.png
+        resources/knob-vinyldetune.png
+        resources/knob-psycheshimmer.png
+        resources/knob-psychespace.png
+        resources/knob-psychemod.png
+        resources/knob-psychewarp.png
+        resources/knob-psychemix.png
+        resources/knob-psychenotches.png
+        resources/knob-psychesweep.png
+        resources/knob-lfoshape.png
+        resources/knob-lforate.png
+        resources/knob-lfodepth.png
+        resources/knob-lfosyncrate.png
+        resources/knob-lfophase.png
+        resources/knob-mastermix.png
+        resources/knob-mastergain.png
 )
 
 # Source files

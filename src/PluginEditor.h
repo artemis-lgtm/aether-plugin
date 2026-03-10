@@ -36,7 +36,14 @@ private:
         int frameW = 128;
     };
 
-    FilmstripLookAndFeel swellLnf, vinylLnf, masterLnf, psycheLnf, lfoLnf;
+    // Per-knob LookAndFeel for random colors (19 knobs)
+    FilmstripLookAndFeel lnfSwellSens, lnfSwellAttack, lnfSwellDepth;
+    FilmstripLookAndFeel lnfVinylYear, lnfVinylDetune;
+    FilmstripLookAndFeel lnfPsycheShimmer, lnfPsycheSpace, lnfPsycheMod, lnfPsycheWarp;
+    FilmstripLookAndFeel lnfPsycheMix, lnfPsycheNotches, lnfPsycheSweep;
+    FilmstripLookAndFeel lnfLfoShape, lnfLfoRate, lnfLfoDepth, lnfLfoSyncRate, lnfLfoPhase;
+    FilmstripLookAndFeel lnfMasterMix, lnfMasterGain;
+    FilmstripLookAndFeel bypassLnf; // shared for all bypass buttons
 
     juce::Image backgroundImg;
 
