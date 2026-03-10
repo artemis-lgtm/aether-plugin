@@ -309,7 +309,7 @@ void AetherEditor::resized()
     lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
     lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
     lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
-    lfoSync.setBounds(620, 470, 18, 18);
+    lfoSync.setBounds(695, 468, 22, 22);  // bigger LED, next to SYNC tape label
     lfoBypass.setBounds(648, 368, ledS, ledS);  // right of LFO area
 }
 
