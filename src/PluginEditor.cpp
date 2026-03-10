@@ -193,7 +193,7 @@ AetherEditor::AetherEditor(AetherProcessor& p)
     aLfoBypass     = std::make_unique<ButtonAttachment>(apvts, "lfoBypass",     lfoBypass);
     aLfoSync       = std::make_unique<ButtonAttachment>(apvts, "lfoSync",       lfoSync);
 
-    startTimerHz(30); // 30fps for smooth neon animation
+    // No animation timer needed — borders are static in background
 }
 
 AetherEditor::~AetherEditor()
@@ -329,14 +329,7 @@ void AetherEditor::paint(juce::Graphics& g)
     else
         g.fillAll(juce::Colour(0xFF3B2F2F));
 
-    // ---- Animated neon glow overlays (exact positions from face art) ----
-    juce::Colour neonRed(0xFFFF2828);
-
-    // Title box — exact match: x=229, y=5, w=561, h=83
-    drawNeonGlow(g, { 229.0f, 5.0f, 561.0f, 83.0f }, neonRed, 0.9f);
-
-    // Portrait frame — exact match: x=810, y=405, w=175, h=175
-    drawNeonGlow(g, { 810.0f, 405.0f, 175.0f, 175.0f }, neonRed, 0.75f);
+    // Neon borders are baked into the background texture — no overlay needed
 
     // (LFO info readout removed — clean pedal surface)
 }
