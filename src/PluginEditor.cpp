@@ -57,13 +57,19 @@ void AetherEditor::FilmstripLookAndFeel::drawToggleButton(
     }
     else
     {
-        g.setColour(on ? juce::Colour(0xBBFF2828) : juce::Colour(0xBB888888));
-        g.fillRoundedRectangle(bounds, 8.0f);
-        g.setColour(juce::Colour(0x60000000));
-        g.drawRoundedRectangle(bounds, 8.0f, 1.5f);
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(9.0f).boldened());
-        g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
+        // Sync toggle: small LED-style indicator, no text
+        float ledSize = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.6f;
+        auto ledBounds = bounds.withSizeKeepingCentre(ledSize, ledSize);
+        g.setColour(on ? juce::Colour(0xDDFF2020) : juce::Colour(0x66444444));
+        g.fillEllipse(ledBounds);
+        g.setColour(juce::Colour(0x40000000));
+        g.drawEllipse(ledBounds, 1.0f);
+        if (on)
+        {
+            // Glow when active
+            g.setColour(juce::Colour(0x30FF0000));
+            g.fillEllipse(ledBounds.expanded(3.0f));
+        }
     }
 }
 
@@ -166,34 +172,33 @@ void AetherEditor::timerCallback()
 {
     neonTime += 1.0f / 30.0f;
 
-    // Slow breathing: 0.7 - 1.0 over ~3 second cycle
-    neonBreath = 0.85f + 0.15f * std::sin(neonTime * 2.1f);
+    // Faster breathing: ~1.5 second cycle, subtle
+    neonBreath = 0.88f + 0.12f * std::sin(neonTime * 4.2f);
 
-    // Random flicker events (like a real neon tube)
+    // Faster, more frequent flicker events
     flickerCountdown--;
     if (flickerCountdown <= 0)
     {
-        std::uniform_int_distribution<int> nextFlicker(15, 90); // 0.5 - 3 seconds between events
+        std::uniform_int_distribution<int> nextFlicker(5, 40); // 0.17 - 1.3 seconds
         flickerCountdown = nextFlicker(rng);
 
         std::uniform_real_distribution<float> flickerType(0.0f, 1.0f);
         float r = flickerType(rng);
-        if (r < 0.15f)
-            neonFlicker = 0.3f;  // hard stutter (rare)
-        else if (r < 0.35f)
-            neonFlicker = 0.6f;  // soft dip
+        if (r < 0.08f)
+            neonFlicker = 0.2f;  // hard stutter (rare)
+        else if (r < 0.25f)
+            neonFlicker = 0.55f; // soft dip
         else
-            neonFlicker = 1.0f;  // normal
+            neonFlicker = 1.0f;
     }
     else if (neonFlicker < 1.0f)
     {
-        // Recover from flicker over a few frames
-        neonFlicker = juce::jmin(1.0f, neonFlicker + 0.15f);
+        neonFlicker = juce::jmin(1.0f, neonFlicker + 0.25f); // faster recovery
     }
 
-    // Only repaint the neon areas (title top + portrait bottom-right)
-    repaint(0, 0, getWidth(), 65);                  // title region
-    repaint(getWidth() - 230, getHeight() - 220, 230, 220); // portrait region
+    // Repaint neon areas (title + portrait with margin for glow)
+    repaint(210, 0, 600, 110);
+    repaint(790, 385, 230, 235);
 }
 
 // ================================================================
@@ -265,7 +270,7 @@ void AetherEditor::resized()
     lfoDepth.setBounds(615 - K/2, 410 - K/2, K, K);
     lfoSyncRate.setBounds    (455 - K/2, 485 - K/2, K, K);
     lfoPhaseOffset.setBounds (535 - K/2, 485 - K/2, K, K);
-    lfoSync.setBounds(700, 445, 55, 24);
+    lfoSync.setBounds(620, 470, 18, 18);  // small LED next to phase knob
     lfoBypass.setBounds(415, 361, 36, 22);
 }
 
@@ -280,26 +285,14 @@ void AetherEditor::paint(juce::Graphics& g)
     else
         g.fillAll(juce::Colour(0xFF3B2F2F));
 
-    // ---- Animated neon glow overlays ----
+    // ---- Animated neon glow overlays (exact positions from face art) ----
     juce::Colour neonRed(0xFFFF2828);
 
-    // Title box "Austin's Secret Sauce" — approximate baked position
-    // (centered, near top of pedal face)
-    {
-        float titleW = 350.0f;
-        float titleH = 50.0f;
-        float titleX = (float)getWidth() * 0.5f - titleW * 0.5f;
-        float titleY = 8.0f;
-        drawNeonGlow(g, { titleX, titleY, titleW, titleH }, neonRed, 0.9f);
-    }
+    // Title box — exact match: x=229, y=5, w=561, h=83
+    drawNeonGlow(g, { 229.0f, 5.0f, 561.0f, 83.0f }, neonRed, 0.9f);
 
-    // Portrait frame — bottom right of pedal face
-    {
-        float pw = 175.0f, ph = 175.0f;
-        float px = (float)getWidth() - pw - 35.0f;
-        float py = (float)getHeight() - ph - 40.0f;
-        drawNeonGlow(g, { px, py, pw, ph }, neonRed, 0.75f);
-    }
+    // Portrait frame — exact match: x=810, y=405, w=175, h=175
+    drawNeonGlow(g, { 810.0f, 405.0f, 175.0f, 175.0f }, neonRed, 0.75f);
 
     // LFO info readout
     int lShape = static_cast<int>(lfoShape.getValue());
